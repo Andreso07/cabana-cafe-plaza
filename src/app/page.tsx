@@ -1,8 +1,11 @@
 import Image from "next/image";
-import { CABANA, PLANES, PRECIOS, REGLAS, SERVICIOS } from "@/config/cabana";
 import { Reservar } from "@/components/Reservar";
+import { leerConfig } from "@/lib/config";
 import { pesos } from "@/lib/precios";
 import { wompiConfigurado } from "@/lib/wompi";
+
+// Lee precios y textos de la base en cada visita: un cambio en el panel se ve al instante.
+export const dynamic = "force-dynamic";
 
 function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono?: "teja" | "cafe" | "suave" }) {
   const estilos = {
@@ -17,14 +20,51 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
   );
 }
 
-export default function Inicio() {
+export default async function Inicio() {
+  const cfg = await leerConfig();
+  const { precios } = cfg;
+
+  // Los planes salen de los mismos precios que cobra el calendario.
+  const planes = [
+    {
+      id: "semana",
+      nombre: "Escapada entre semana",
+      icono: "🌿",
+      precio: precios.semana,
+      unidad: "/ noche",
+      incluyeAnterior: null as string | null,
+      incluye: ["Domingo a jueves", `Cabaña completa, hasta ${cfg.capacidad} personas`, "El precio más bajo de la semana"],
+      destacado: false,
+    },
+    {
+      id: "finde",
+      nombre: "Fin de semana",
+      icono: "☕",
+      precio: precios.viernes + precios.finDeSemana,
+      unidad: "/ 2 noches",
+      incluyeAnterior: "Escapada",
+      incluye: ["Llega el viernes, sal el domingo", "Viernes y sábado en la cabaña", "Ideal para pareja"],
+      destacado: true,
+    },
+    {
+      id: "puente",
+      nombre: "Puente festivo",
+      icono: "🎉",
+      precio: precios.viernes + precios.finDeSemana * 2,
+      unidad: "/ 3 noches",
+      incluyeAnterior: "Escapada",
+      incluye: ["De viernes a lunes festivo", "Tres noches para desconectarte", "Reserva con tiempo: se llena rápido"],
+      destacado: false,
+    },
+  ];
+
   return (
     <main>
       {/* Banner */}
       <section className="relative h-[72vh] min-h-[440px] w-full">
         <Image
           src="/cabana.jpg"
-          alt={`${CABANA.nombre}: cabaña con techo de teja roja y frente de vidrio entre cafetales, con montañas al fondo`}
+          alt={`${cfg.nombre}: cabaña con techo de teja roja y frente de vidrio entre cafetales, con montañas al fondo`}
           fill
           priority
           sizes="100vw"
@@ -32,14 +72,12 @@ export default function Inicio() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-10 text-white">
-          <Etiqueta>🏡 {CABANA.vereda} · {CABANA.municipio}</Etiqueta>
+          <Etiqueta>🏡 {cfg.vereda} · {cfg.municipio}</Etiqueta>
           <h1 className="font-titulo mt-4 text-[40px] sm:text-[60px] leading-[0.95] font-extrabold tracking-tight">
-            Despierta entre
-            <span className="block text-sol">cafetales y montañas</span>
+            {cfg.heroTitulo}
+            <span className="block text-sol">{cfg.heroDestacado}</span>
           </h1>
-          <p className="mt-3 max-w-[46ch] text-base sm:text-lg font-semibold text-white/90">
-            Una cabaña para {CABANA.capacidad} personas en el corazón cafetero de {CABANA.departamento}.
-          </p>
+          <p className="mt-3 max-w-[46ch] text-base sm:text-lg font-semibold text-white/90">{cfg.heroSubtitulo}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="#reservar" className="boton-goma font-titulo bg-teja text-white font-extrabold text-base px-7 py-3.5 rounded-full">
               Reservar fechas →
@@ -57,18 +95,27 @@ export default function Inicio() {
           <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
             <div>
               <Etiqueta>📅 Reserva en 2 minutos</Etiqueta>
-              <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">
-                Aparta tus fechas
-              </h2>
+              <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Aparta tus fechas</h2>
               <p className="mt-2 text-sm font-bold text-suave">
-                Elige llegada y salida, déjanos tus datos y paga el {PRECIOS.porcentajeAnticipo}% para confirmar.
+                Elige llegada y salida, déjanos tus datos y paga el {cfg.porcentajeAnticipo}% para confirmar.
               </p>
             </div>
             <span className="flex items-center gap-2 text-[11px] font-extrabold bg-white border border-black/5 rounded-full px-3 py-2">
               <span className="size-2 rounded-full bg-cafe animate-pulse" /> Disponibilidad en tiempo real
             </span>
           </div>
-          <Reservar conWompi={wompiConfigurado()} />
+          <Reservar
+            conWompi={wompiConfigurado()}
+            cfg={{
+              precios: cfg.precios,
+              porcentajeAnticipo: cfg.porcentajeAnticipo,
+              minNoches: cfg.minNoches,
+              fechasEspeciales: cfg.fechasEspeciales,
+              descuentos: cfg.descuentos.filter((d) => d.activo),
+              capacidad: cfg.capacidad,
+              horasApartado: cfg.horasApartado,
+            }}
+          />
         </div>
       </section>
 
@@ -77,12 +124,10 @@ export default function Inicio() {
         <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
           <div className="text-center max-w-[640px] mx-auto">
             <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
-            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">
-              Todo para descansar
-            </h2>
+            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Todo para descansar</h2>
           </div>
           <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
-            {SERVICIOS.map((s) => (
+            {cfg.servicios.map((s) => (
               <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
                 <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
                   {s.icono}
@@ -94,6 +139,11 @@ export default function Inicio() {
               </div>
             ))}
           </div>
+          {cfg.noIncluye.length > 0 && (
+            <p className="mt-6 text-center text-sm font-bold text-suave">
+              No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.
+            </p>
+          )}
         </div>
       </section>
 
@@ -101,22 +151,18 @@ export default function Inicio() {
       <section id="planes" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
         <div className="text-center max-w-[640px] mx-auto">
           <Etiqueta tono="suave">🌿 Nuestros planes</Etiqueta>
-          <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">
-            Elige tu escapada
-          </h2>
+          <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Elige tu escapada</h2>
           <p className="mt-3 text-sm md:text-[15px] font-bold text-suave">
             Precios por la cabaña completa, no por persona. El total exacto lo ves en el calendario.
           </p>
         </div>
 
         <div className="mt-12 grid md:grid-cols-3 gap-6 items-stretch">
-          {PLANES.map((p) => (
+          {planes.map((p) => (
             <div
               key={p.id}
               className={`relative rounded-[28px] border-[3px] bg-white p-6 flex flex-col ${
-                p.destacado
-                  ? "border-teja shadow-[0_12px_0_var(--teja)] md:-translate-y-1"
-                  : "border-black/10"
+                p.destacado ? "border-teja shadow-[0_12px_0_var(--teja)] md:-translate-y-1" : "border-black/10"
               }`}
             >
               {p.destacado && (
@@ -158,9 +204,7 @@ export default function Inicio() {
               <a
                 href="#reservar"
                 className={`mt-6 block text-center rounded-full py-3 font-extrabold text-sm border-2 ${
-                  p.destacado
-                    ? "boton-goma bg-teja text-white border-teja"
-                    : "bg-crema border-black/5 text-tinta/70 hover:border-teja/40"
+                  p.destacado ? "boton-goma bg-teja text-white border-teja" : "bg-crema border-black/5 text-tinta/70 hover:border-teja/40"
                 }`}
               >
                 Ver fechas disponibles
@@ -170,10 +214,16 @@ export default function Inicio() {
         </div>
 
         <div className="mt-8 bg-sol/20 border-2 border-dashed border-sol/50 rounded-[18px] px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-[#7a4e00]">
-          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">👥 Hasta {CABANA.capacidad} personas</span>
-          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">💳 Pagas el {PRECIOS.porcentajeAnticipo}% al reservar</span>
-          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">📅 Puentes: mínimo {PRECIOS.minNochesPuente} noches</span>
-          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">🕒 Entrada {CABANA.checkIn} · Salida {CABANA.checkOut}</span>
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">👥 Hasta {cfg.capacidad} personas</span>
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">💳 Separas con el {cfg.porcentajeAnticipo}%</span>
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">🕒 Entrada {cfg.checkIn} · Salida {cfg.checkOut}</span>
+          {cfg.descuentos
+            .filter((d) => d.activo)
+            .map((d) => (
+              <span key={d.id} className="bg-white rounded-full px-3 py-1 border border-cafe/30 text-cafe">
+                🎁 {d.nombre}: −{d.porcentaje}%
+              </span>
+            ))}
         </div>
       </section>
 
@@ -183,7 +233,7 @@ export default function Inicio() {
           <div>
             <h2 className="font-titulo text-2xl font-extrabold">Antes de venir</h2>
             <ul className="mt-3 space-y-2">
-              {REGLAS.map((r) => (
+              {[`Entrada desde las ${cfg.checkIn} y salida hasta las ${cfg.checkOut}`, ...cfg.reglas].map((r) => (
                 <li key={r} className="flex gap-2 text-sm font-semibold">
                   <span className="text-teja" aria-hidden>●</span> {r}
                 </li>
@@ -191,7 +241,7 @@ export default function Inicio() {
             </ul>
           </div>
           <a
-            href={CABANA.mapsUrl}
+            href={cfg.mapsUrl}
             target="_blank"
             rel="noopener"
             className="flex items-center gap-3 rounded-[20px] bg-cafe text-white p-5 shadow-[0_6px_0_var(--cafe-oscuro)] hover:translate-y-px"
@@ -199,7 +249,7 @@ export default function Inicio() {
             <span className="text-3xl" aria-hidden>📍</span>
             <span>
               <span className="block font-titulo font-extrabold text-lg">Cómo llegar</span>
-              <span className="block text-sm font-semibold text-white/85">{CABANA.vereda}, {CABANA.municipio}</span>
+              <span className="block text-sm font-semibold text-white/85">{cfg.comoLlegar}</span>
             </span>
           </a>
         </div>

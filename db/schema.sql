@@ -41,8 +41,20 @@ create table if not exists bloqueos (
   check (hasta >= desde)
 );
 
+-- Descuento aplicado a cada reserva (para el panel y para no recalcular con reglas que cambiaron).
+alter table reservas add column if not exists descuento integer not null default 0;
+alter table reservas add column if not exists descuento_nombre text;
+
+-- Textos, precios, fechas especiales y descuentos que se editan desde el panel. Una sola fila.
+create table if not exists configuracion (
+  id             smallint primary key default 1 check (id = 1),
+  datos          jsonb not null,
+  actualizado_en timestamptz not null default now()
+);
+
 -- Supabase publica las tablas de "public" en su API REST. Con RLS activo y sin
 -- políticas, esa API no puede leer ni escribir nada: solo la web, que entra con
 -- la conexión directa a la base, ve los datos de los huéspedes.
 alter table reservas enable row level security;
 alter table bloqueos enable row level security;
+alter table configuracion enable row level security;

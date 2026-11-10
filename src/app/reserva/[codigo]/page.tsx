@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { CABANA, PAGO_MANUAL } from "@/config/cabana";
+import { leerConfig } from "@/lib/config";
 import { formatoLargo } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
 import { obtenerReserva } from "@/lib/store";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PaginaReserva({ params }: PageProps<"/reserva/[codigo]">) {
   const { codigo } = await params;
-  const r = await obtenerReserva(codigo);
+  const [r, cfg] = await Promise.all([obtenerReserva(codigo), leerConfig()]);
   if (!r) notFound();
 
   const h = await headers();
@@ -29,30 +29,41 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
         })
       : null;
 
-  const whatsapp = `https://wa.me/${CABANA.whatsapp}?text=${encodeURIComponent(
-    `Hola, tengo la reserva ${r.codigo} en ${CABANA.nombre}`,
+  const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
+    `Hola, tengo la reserva ${r.codigo} en ${cfg.nombre}`,
   )}`;
+  const mensajeComprobante = `Hola, adjunto el comprobante de la reserva ${r.codigo} por ${pesos(r.anticipo)}${
+    cfg.requisitos ? ` y ${cfg.requisitos.charAt(0).toLowerCase()}${cfg.requisitos.slice(1).replace(/\.$/, "")}` : ""
+  }.`;
 
   return (
     <main className="mx-auto max-w-xl px-4 py-12">
-      <Link href="/" className="text-sm text-suave hover:underline">← {CABANA.nombre}</Link>
-      <h1 className="font-titulo text-3xl mt-4">
-        {r.estado === "confirmada" && "¡Reserva confirmada!"}
+      <Link href="/" className="text-sm font-bold text-suave hover:underline">← {cfg.nombre}</Link>
+      <h1 className="font-titulo text-[34px] font-extrabold leading-tight mt-4">
+        {r.estado === "confirmada" && "¡Reserva confirmada! 🎉"}
         {r.estado === "pendiente" && "Falta el pago"}
         {r.estado === "expirada" && "La reserva expiró"}
         {r.estado === "cancelada" && "Reserva cancelada"}
       </h1>
-      <p className="text-suave mt-1">Código de reserva: <strong className="text-tinta">{r.codigo}</strong></p>
+      <p className="text-suave font-semibold mt-1">
+        Código de reserva: <strong className="text-tinta">{r.codigo}</strong>
+      </p>
 
-      <div className="mt-6 rounded-2xl border border-linea bg-white p-5 space-y-1 text-sm">
-        <p><span className="text-suave">Llegada:</span> {formatoLargo(r.entrada)} desde las {CABANA.checkIn}</p>
-        <p><span className="text-suave">Salida:</span> {formatoLargo(r.salida)} hasta las {CABANA.checkOut}</p>
+      <div className="mt-6 rounded-[24px] border-[3px] border-black/5 bg-white p-5 space-y-1 text-sm font-semibold">
+        <p><span className="text-suave">Llegada:</span> {formatoLargo(r.entrada)} desde las {cfg.checkIn}</p>
+        <p><span className="text-suave">Salida:</span> {formatoLargo(r.salida)} hasta las {cfg.checkOut}</p>
         <p><span className="text-suave">Huéspedes:</span> {r.huespedes}</p>
         <p><span className="text-suave">A nombre de:</span> {r.nombre}</p>
         <hr className="border-linea my-2" />
+        {r.descuento > 0 && (
+          <p className="flex justify-between text-cafe">
+            <span>🎁 {r.descuentoNombre ?? "Descuento"}</span>
+            <span>−{pesos(r.descuento)}</span>
+          </p>
+        )}
         <p className="flex justify-between"><span>Total</span><span>{pesos(r.total)}</span></p>
-        <p className="flex justify-between font-semibold">
-          <span>{r.estado === "confirmada" ? "Anticipo pagado" : "Anticipo a pagar"}</span>
+        <p className="flex justify-between font-extrabold">
+          <span>{r.estado === "confirmada" ? "Anticipo pagado" : "Anticipo para separar"}</span>
           <span>{pesos(r.anticipo)}</span>
         </p>
         <p className="flex justify-between text-suave"><span>Saldo al llegar</span><span>{pesos(r.total - r.anticipo)}</span></p>
@@ -60,43 +71,46 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
 
       {r.estado === "pendiente" && (
         <div className="mt-6 space-y-3">
-          <p className="text-sm">
+          <p className="text-sm font-semibold">
             Tus fechas están apartadas hasta las{" "}
             <strong>
-              {new Date(r.expiraEn).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "numeric", minute: "2-digit" })}
+              {new Date(r.expiraEn).toLocaleString("es-CO", {
+                timeZone: "America/Bogota",
+                hour: "numeric",
+                minute: "2-digit",
+                day: "numeric",
+                month: "short",
+              })}
             </strong>
             . Si no se recibe el pago, quedan libres otra vez.
           </p>
           {pago ? (
-            <a href={pago} className="block text-center rounded-full bg-teja hover:bg-teja-oscura text-white font-medium py-3">
+            <a href={pago} className="boton-goma block text-center rounded-full bg-teja text-white font-extrabold py-3.5">
               Pagar {pesos(r.anticipo)} con Nequi, PSE o tarjeta
             </a>
           ) : process.env.NODE_ENV !== "production" ? (
             <SimularPago codigo={r.codigo} />
           ) : (
-            <div className="rounded-xl border border-linea bg-white p-4 text-sm space-y-2">
-              <p className="font-medium">Paga {pesos(r.anticipo)} por transferencia:</p>
-              {PAGO_MANUAL.llaveBreB && (
+            <div className="rounded-[24px] border-[3px] border-teja bg-white p-5 text-sm font-semibold space-y-2 shadow-[0_8px_0_var(--teja)]">
+              <p className="font-titulo text-lg font-extrabold">Separa con {pesos(r.anticipo)}</p>
+              {cfg.llaveBreB && (
                 <p>
                   <span className="text-suave">Llave Bre-B (desde Nequi o cualquier banco):</span>{" "}
-                  <strong className="select-all">{PAGO_MANUAL.llaveBreB}</strong>
+                  <strong className="select-all text-base">{cfg.llaveBreB}</strong>
                 </p>
               )}
-              {PAGO_MANUAL.nequi && (
-                <p><span className="text-suave">Nequi:</span> <strong>{PAGO_MANUAL.nequi}</strong></p>
-              )}
-              {PAGO_MANUAL.titular && (
-                <p><span className="text-suave">A nombre de:</span> {PAGO_MANUAL.titular}</p>
-              )}
+              {cfg.nequi && <p><span className="text-suave">Nequi:</span> <strong>{cfg.nequi}</strong></p>}
+              {cfg.titular && <p><span className="text-suave">A nombre de:</span> {cfg.titular}</p>}
               <p>
-                En la descripción escribe tu código <strong>{r.codigo}</strong> y envíanos el comprobante por WhatsApp.
-                Confirmamos tu reserva en cuanto lo veamos.
+                En la descripción escribe tu código <strong>{r.codigo}</strong>. Luego envíanos por WhatsApp el comprobante
+                {cfg.requisitos && <> y {cfg.requisitos.charAt(0).toLowerCase() + cfg.requisitos.slice(1)}</>}
+                {!cfg.requisitos && "."} Confirmamos tu reserva en cuanto lo veamos.
               </p>
               <a
-                href={`https://wa.me/${CABANA.whatsapp}?text=${encodeURIComponent(`Hola, adjunto el comprobante de la reserva ${r.codigo} por ${pesos(r.anticipo)}`)}`}
+                href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(mensajeComprobante)}`}
                 target="_blank"
                 rel="noopener"
-                className="block text-center rounded-full bg-[#25D366] text-white font-medium py-3"
+                className="boton-whatsapp block text-center rounded-full bg-[#25D366] text-white font-extrabold py-3"
               >
                 Enviar comprobante por WhatsApp
               </a>
@@ -107,20 +121,21 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
       )}
 
       {r.estado === "confirmada" && (
-        <div className="mt-6 text-sm space-y-2">
+        <div className="mt-6 text-sm font-semibold space-y-2">
           <p>Te esperamos. Guarda este código; con él te atendemos por WhatsApp.</p>
-          <a href={CABANA.mapsUrl} target="_blank" rel="noopener" className="underline text-cafe">Cómo llegar</a>
+          <p className="text-suave">{cfg.comoLlegar}</p>
+          <a href={cfg.mapsUrl} target="_blank" rel="noopener" className="underline text-cafe">Abrir en Google Maps</a>
         </div>
       )}
 
       {r.estado === "expirada" && (
-        <p className="mt-6 text-sm">
+        <p className="mt-6 text-sm font-semibold">
           No recibimos el pago a tiempo. Si ya pagaste, escríbenos por WhatsApp con tu código y lo revisamos.{" "}
           <Link href="/#reservar" className="underline">Hacer una nueva reserva</Link>
         </p>
       )}
 
-      <a href={whatsapp} target="_blank" rel="noopener" className="mt-8 inline-block text-sm underline text-cafe">
+      <a href={whatsapp} target="_blank" rel="noopener" className="mt-8 inline-block text-sm font-bold underline text-cafe">
         ¿Dudas? Escríbenos por WhatsApp
       </a>
     </main>

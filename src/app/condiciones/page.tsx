@@ -1,32 +1,35 @@
 import Link from "next/link";
-import { CABANA, PRECIOS, REGLAS } from "@/config/cabana";
+import { LIMITES } from "@/config/cabana";
+import { leerConfig } from "@/lib/config";
 
-// BORRADOR: revisa estas condiciones y ajústalas a lo que de verdad vas a cumplir.
-export default function Condiciones() {
+export const dynamic = "force-dynamic";
+
+export default async function Condiciones() {
+  const cfg = await leerConfig();
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 space-y-4 leading-relaxed">
-      <Link href="/" className="text-sm text-suave hover:underline">← {CABANA.nombre}</Link>
-      <h1 className="font-titulo text-3xl">Condiciones de reserva y cancelación</h1>
+    <main className="mx-auto max-w-2xl px-4 py-12 space-y-4 leading-relaxed font-semibold">
+      <Link href="/" className="text-sm font-bold text-suave hover:underline">← {cfg.nombre}</Link>
+      <h1 className="font-titulo text-[34px] font-extrabold leading-tight">Condiciones de reserva y cancelación</h1>
 
-      <h2 className="font-semibold text-lg pt-2">Pago</h2>
+      <h2 className="font-titulo font-extrabold text-xl pt-2">Pago</h2>
       <p>
-        Para confirmar la reserva se paga el {PRECIOS.porcentajeAnticipo}% del valor total en línea.
-        El saldo se paga al llegar. Las fechas quedan apartadas mientras se completa el pago
-        ({PRECIOS.minutosApartado} minutos en línea, {PRECIOS.minutosApartadoManual / 60} horas por
-        transferencia); si no se recibe, vuelven a estar disponibles.
+        La reserva se separa pagando el {cfg.porcentajeAnticipo}% del valor total
+        {cfg.requisitos && <> y enviando {cfg.requisitos.charAt(0).toLowerCase() + cfg.requisitos.slice(1)}</>}
+        {!cfg.requisitos && "."} El saldo se paga al llegar. Las fechas quedan apartadas mientras se completa
+        el pago ({cfg.horasApartado} horas por transferencia, {LIMITES.minutosApartadoWompi} minutos en
+        línea); si no se recibe, vuelven a estar disponibles.
       </p>
 
-      <h2 className="font-semibold text-lg pt-2">Cancelación</h2>
-      <ul className="list-disc pl-6">
-        <li>Con 15 días o más de anticipación a la llegada: se devuelve el 100% del anticipo.</li>
-        <li>Entre 14 y 7 días antes: se devuelve el 50% del anticipo o se cambia la fecha sin costo.</li>
-        <li>Con menos de 7 días: no hay devolución; se puede cambiar la fecha una vez, sujeto a disponibilidad.</li>
+      <h2 className="font-titulo font-extrabold text-xl pt-2">Cancelación</h2>
+      <ul className="list-disc pl-6 space-y-1">
+        {cfg.cancelacion.map((c) => <li key={c}>{c}</li>)}
       </ul>
-      <p>Si por causa nuestra no podemos recibirte, devolvemos el 100% de lo pagado.</p>
 
-      <h2 className="font-semibold text-lg pt-2">Estadía</h2>
-      <ul className="list-disc pl-6">
-        {REGLAS.map((r) => <li key={r}>{r}</li>)}
+      <h2 className="font-titulo font-extrabold text-xl pt-2">Estadía</h2>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>Entrada desde las {cfg.checkIn} y salida hasta las {cfg.checkOut}.</li>
+        {cfg.reglas.map((r) => <li key={r}>{r}</li>)}
+        {cfg.noIncluye.length > 0 && <li>No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.</li>}
       </ul>
       <p>
         Al llegar se presenta el documento de identidad de todos los huéspedes adultos, para el registro

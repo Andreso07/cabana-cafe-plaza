@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { CABANA, PRECIOS } from "@/config/cabana";
+import { LIMITES } from "@/config/cabana";
+import { leerConfig } from "@/lib/config";
 import { diasEntre, esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { cotizar } from "@/lib/precios";
 import { crearReserva, FechasNoDisponibles } from "@/lib/store";
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
   }
+  const cfg = await leerConfig();
 
   const { entrada, salida } = body;
   const huespedes = Number(body.huespedes);
@@ -32,12 +34,12 @@ export async function POST(req: Request) {
     const hoy = hoyEnColombia();
     if (entrada < hoy) errores.push("La fecha de llegada ya pasó");
     if (salida <= entrada) errores.push("La salida debe ser después de la llegada");
-    if (diasEntre(hoy, entrada) > PRECIOS.diasMaximosAdelante) {
+    if (diasEntre(hoy, entrada) > LIMITES.diasMaximosAdelante) {
       errores.push("Todavía no se reciben reservas para esas fechas");
     }
   }
-  if (!Number.isInteger(huespedes) || huespedes < 1 || huespedes > CABANA.capacidad) {
-    errores.push(`El número de huéspedes debe estar entre 1 y ${CABANA.capacidad}`);
+  if (!Number.isInteger(huespedes) || huespedes < 1 || huespedes > cfg.capacidad) {
+    errores.push(`El número de huéspedes debe estar entre 1 y ${cfg.capacidad}`);
   }
   if (nombre.length < 3) errores.push("Escribe tu nombre completo");
   if (documento.length < 5) errores.push("Escribe tu número de documento");
@@ -47,27 +49,32 @@ export async function POST(req: Request) {
   if (body.aceptaTerminos !== true) errores.push("Debes aceptar las condiciones de reserva");
   if (errores.length) return NextResponse.json({ error: errores.join(". ") }, { status: 400 });
 
-  // El precio lo calcula el servidor, nunca el navegador.
-  const cot = cotizar(entrada as string, salida as string);
+  // El precio lo calcula el servidor con la configuración vigente, nunca el navegador.
+  const cot = cotizar(entrada as string, salida as string, cfg);
   if (cot.noches.length < cot.minNoches) {
     return NextResponse.json(
-      { error: `En esas fechas la estadía mínima es de ${cot.minNoches} noches` },
+      { error: `La estadía mínima es de ${cot.minNoches} noches` },
       { status: 400 },
     );
   }
 
   try {
-    const reserva = await crearReserva({
-      entrada: entrada as string,
-      salida: salida as string,
-      huespedes,
-      nombre,
-      documento,
-      email,
-      telefono,
-      total: cot.total,
-      anticipo: cot.anticipo,
-    }, wompiConfigurado() ? PRECIOS.minutosApartado : PRECIOS.minutosApartadoManual);
+    const reserva = await crearReserva(
+      {
+        entrada: entrada as string,
+        salida: salida as string,
+        huespedes,
+        nombre,
+        documento,
+        email,
+        telefono,
+        total: cot.total,
+        anticipo: cot.anticipo,
+        descuento: cot.descuento?.valor ?? 0,
+        descuentoNombre: cot.descuento?.nombre,
+      },
+      wompiConfigurado() ? LIMITES.minutosApartadoWompi : cfg.horasApartado * 60,
+    );
     return NextResponse.json({ codigo: reserva.codigo }, { status: 201 });
   } catch (e) {
     if (e instanceof FechasNoDisponibles) {

@@ -1,62 +1,66 @@
 // Cálculo de precios. Lo usan el calendario (para mostrar) y el servidor
-// (para cobrar): el servidor nunca confía en el total que manda el navegador.
-import { PRECIOS } from "@/config/cabana";
+// (para cobrar) con la misma configuración: el servidor nunca confía en el
+// total que manda el navegador.
+import type { Config, Descuento } from "@/config/cabana";
 import { diaSemana, noches, sumarDias, type Fecha } from "./fechas";
 import { esFestivo } from "./festivos";
 
-export type TipoNoche = "semana" | "finDeSemana" | "temporadaAlta";
+/** Lo que el cálculo necesita de la configuración (es lo que viaja al navegador). */
+export type ConfigPrecios = Pick<
+  Config,
+  "precios" | "porcentajeAnticipo" | "minNoches" | "fechasEspeciales" | "descuentos"
+>;
 
-function enTemporadaAlta(fecha: Fecha): boolean {
-  const md = fecha.slice(5); // "MM-DD"
-  return PRECIOS.temporadasAltas.some(({ desde, hasta }) =>
-    desde <= hasta ? md >= desde && md <= hasta : md >= desde || md <= hasta,
-  );
-}
+export type TipoNoche = "semana" | "viernes" | "finDeSemana" | "especial";
 
-/** La noche que empieza en `fecha` es víspera de festivo (puente). */
-export function esNochePuente(fecha: Fecha): boolean {
-  return esFestivo(sumarDias(fecha, 1));
-}
-
-export function tipoNoche(fecha: Fecha): TipoNoche {
-  if (enTemporadaAlta(fecha)) return "temporadaAlta";
+export function tipoNoche(fecha: Fecha, cfg: ConfigPrecios): { tipo: TipoNoche; precio: number; nombre?: string } {
+  const especial = cfg.fechasEspeciales.find((e) => fecha >= e.desde && fecha <= e.hasta);
+  if (especial) return { tipo: "especial", precio: especial.precio, nombre: especial.nombre };
   const dia = diaSemana(fecha);
-  if (dia === 5 || dia === 6 || esNochePuente(fecha) || esFestivo(fecha)) return "finDeSemana";
-  return "semana";
+  // Sábado, día festivo o víspera de festivo (el domingo de un puente).
+  if (dia === 6 || esFestivo(fecha) || esFestivo(sumarDias(fecha, 1))) {
+    return { tipo: "finDeSemana", precio: cfg.precios.finDeSemana };
+  }
+  if (dia === 5) return { tipo: "viernes", precio: cfg.precios.viernes };
+  return { tipo: "semana", precio: cfg.precios.semana };
 }
 
-export function precioNoche(fecha: Fecha): number {
-  switch (tipoNoche(fecha)) {
-    case "temporadaAlta":
-      return PRECIOS.nocheTemporadaAlta;
-    case "finDeSemana":
-      return PRECIOS.nocheFinDeSemana;
-    default:
-      return PRECIOS.nocheEntreSemana;
-  }
+export function precioNoche(fecha: Fecha, cfg: ConfigPrecios): number {
+  return tipoNoche(fecha, cfg).precio;
 }
+
+const aMil = (v: number) => Math.round(v / 1000) * 1000;
 
 export type Cotizacion = {
-  noches: { fecha: Fecha; precio: number; tipo: TipoNoche }[];
+  noches: { fecha: Fecha; precio: number; tipo: TipoNoche; nombre?: string }[];
+  subtotal: number;
+  descuento: { nombre: string; porcentaje: number; valor: number } | null;
   total: number;
   anticipo: number;
   saldo: number;
   minNoches: number;
 };
 
-export function cotizar(entrada: Fecha, salida: Fecha): Cotizacion {
-  const lista = noches(entrada, salida).map((fecha) => ({
-    fecha,
-    precio: precioNoche(fecha),
-    tipo: tipoNoche(fecha),
-  }));
-  const total = lista.reduce((s, n) => s + n.precio, 0);
-  // El anticipo se redondea a mil pesos para que el valor sea fácil de leer.
-  const anticipo = Math.round((total * PRECIOS.porcentajeAnticipo) / 100 / 1000) * 1000;
-  const minNoches = lista.some((n) => esNochePuente(n.fecha))
-    ? PRECIOS.minNochesPuente
-    : PRECIOS.minNoches;
-  return { noches: lista, total, anticipo, saldo: total - anticipo, minNoches };
+function aplica(d: Descuento, entrada: Fecha, n: number): boolean {
+  if (!d.activo || d.porcentaje <= 0) return false;
+  return d.tipo === "noches" ? n >= d.minNoches : entrada >= d.desde && entrada <= d.hasta;
+}
+
+export function cotizar(entrada: Fecha, salida: Fecha, cfg: ConfigPrecios): Cotizacion {
+  const lista = noches(entrada, salida).map((fecha) => ({ fecha, ...tipoNoche(fecha, cfg) }));
+  const subtotal = lista.reduce((s, n) => s + n.precio, 0);
+
+  // Se aplica el mejor descuento disponible; no se acumulan.
+  const mejor = cfg.descuentos
+    .filter((d) => aplica(d, entrada, lista.length))
+    .sort((a, b) => b.porcentaje - a.porcentaje)[0];
+  const descuento = mejor
+    ? { nombre: mejor.nombre, porcentaje: mejor.porcentaje, valor: aMil((subtotal * mejor.porcentaje) / 100) }
+    : null;
+
+  const total = subtotal - (descuento?.valor ?? 0);
+  const anticipo = aMil((total * cfg.porcentajeAnticipo) / 100);
+  return { noches: lista, subtotal, descuento, total, anticipo, saldo: total - anticipo, minNoches: cfg.minNoches };
 }
 
 export function pesos(valor: number): string {

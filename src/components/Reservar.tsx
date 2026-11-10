@@ -3,17 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { CABANA, PRECIOS } from "@/config/cabana";
+import { LIMITES } from "@/config/cabana";
 import { formatoLargo, sumarDias, type Fecha } from "@/lib/fechas";
-import { cotizar, pesos } from "@/lib/precios";
+import { cotizar, pesos, type ConfigPrecios } from "@/lib/precios";
 import { Calendario } from "./Calendario";
 
 type Disponibilidad = { hoy: Fecha; ocupadas: Fecha[] };
 
+/** Lo que el formulario necesita de la configuración; el servidor se lo pasa. */
+export type ConfigReserva = ConfigPrecios & { capacidad: number; horasApartado: number };
+
 const campo =
   "mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold outline-none focus:border-teja focus:bg-white";
 
-export function Reservar({ conWompi }: { conWompi: boolean }) {
+export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigReserva }) {
   const router = useRouter();
   const [disp, setDisp] = useState<Disponibilidad | null>(null);
   const [errorCarga, setErrorCarga] = useState(false);
@@ -38,8 +41,9 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
   }, []);
 
   const ocupadas = useMemo(() => new Set(disp?.ocupadas ?? []), [disp]);
-  const cot = entrada && salida ? cotizar(entrada, salida) : null;
-  const cortaPorPuente = cot ? cot.noches.length < cot.minNoches : false;
+  const cot = entrada && salida ? cotizar(entrada, salida, cfg) : null;
+  const muyCorta = cot ? cot.noches.length < cot.minNoches : false;
+  const desde = Math.min(cfg.precios.semana, cfg.precios.viernes, cfg.precios.finDeSemana);
 
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -96,8 +100,9 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
       <div className="rounded-[24px] border-[3px] border-black/5 bg-white p-4 sm:p-5">
         <Calendario
           hoy={disp.hoy}
-          ultimoDia={sumarDias(disp.hoy, PRECIOS.diasMaximosAdelante)}
+          ultimoDia={sumarDias(disp.hoy, LIMITES.diasMaximosAdelante)}
           ocupadas={ocupadas}
+          cfg={cfg}
           entrada={entrada}
           salida={salida}
           onCambio={(a, b) => {
@@ -113,7 +118,7 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
         {!cot ? (
           <div className="mt-2 text-suave">
             <p className="font-titulo text-[28px] font-extrabold text-tinta leading-none">
-              Desde {pesos(PRECIOS.nocheEntreSemana)} <span className="text-base font-sans font-bold text-suave">/ noche</span>
+              Desde {pesos(desde)} <span className="text-base font-sans font-bold text-suave">/ noche</span>
             </p>
             <p className="mt-3 text-sm font-semibold">
               📅 Elige en el calendario el día de llegada y el de salida para ver el total y llenar tus datos.
@@ -127,19 +132,34 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
             </div>
             <ul className="text-sm font-semibold bg-crema rounded-[16px] border-2 border-dashed border-teja/20 px-3 py-2">
               {cot.noches.map((n) => (
-                <li key={n.fecha} className="flex justify-between">
-                  <span>{formatoLargo(n.fecha)}</span>
-                  <span>{pesos(n.precio)}</span>
+                <li key={n.fecha} className="flex justify-between gap-2">
+                  <span>
+                    {formatoLargo(n.fecha)}
+                    {n.nombre && <span className="ml-1 text-[11px] font-extrabold text-teja">· {n.nombre}</span>}
+                  </span>
+                  <span className="shrink-0">{pesos(n.precio)}</span>
                 </li>
               ))}
             </ul>
             <div className="text-sm space-y-1">
-              <p className="flex justify-between font-medium">
+              {cot.descuento && (
+                <>
+                  <p className="flex justify-between text-suave">
+                    <span>Subtotal</span>
+                    <span>{pesos(cot.subtotal)}</span>
+                  </p>
+                  <p className="flex justify-between font-bold text-cafe">
+                    <span>🎁 {cot.descuento.nombre} (−{cot.descuento.porcentaje}%)</span>
+                    <span>−{pesos(cot.descuento.valor)}</span>
+                  </p>
+                </>
+              )}
+              <p className="flex justify-between font-bold">
                 <span>Total ({cot.noches.length} {cot.noches.length === 1 ? "noche" : "noches"})</span>
                 <span>{pesos(cot.total)}</span>
               </p>
               <p className="flex justify-between text-teja-oscura font-semibold">
-                <span>Pagas hoy ({PRECIOS.porcentajeAnticipo}%)</span>
+                <span>Pagas hoy ({cfg.porcentajeAnticipo}%)</span>
                 <span>{pesos(cot.anticipo)}</span>
               </p>
               <p className="flex justify-between text-suave">
@@ -148,16 +168,16 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
               </p>
             </div>
 
-            {cortaPorPuente ? (
+            {muyCorta ? (
               <p className="text-sm text-teja-oscura" role="alert">
-                En puente festivo la estadía mínima es de {cot.minNoches} noches.
+                La estadía mínima es de {cot.minNoches} noches.
               </p>
             ) : (
               <>
                 <label className="text-sm font-bold">
                   Huéspedes
                   <select name="huespedes" className={campo} defaultValue={2}>
-                    {Array.from({ length: CABANA.capacidad }, (_, i) => (
+                    {Array.from({ length: cfg.capacidad }, (_, i) => (
                       <option key={i + 1} value={i + 1}>{i + 1}</option>
                     ))}
                   </select>
@@ -202,8 +222,8 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
                 </button>
                 <p className="text-xs text-suave text-center">
                   {conWompi
-                    ? `Apartamos tus fechas ${PRECIOS.minutosApartado} minutos mientras pagas con Nequi, PSE o tarjeta.`
-                    : `Apartamos tus fechas ${PRECIOS.minutosApartadoManual / 60} horas mientras pagas por Bre-B (desde Nequi o tu banco).`}
+                    ? `Apartamos tus fechas ${LIMITES.minutosApartadoWompi} minutos mientras pagas con Nequi, PSE o tarjeta.`
+                    : `Apartamos tus fechas ${cfg.horasApartado} horas mientras pagas por Bre-B (desde Nequi o tu banco).`}
                 </p>
               </>
             )}

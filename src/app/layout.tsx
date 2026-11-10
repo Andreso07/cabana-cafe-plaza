@@ -1,23 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Baloo_2, Nunito } from "next/font/google";
-import { CABANA } from "@/config/cabana";
+import { leerConfig } from "@/lib/config";
 import "./globals.css";
 
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
 const baloo = Baloo_2({ variable: "--font-baloo", subsets: ["latin"], weight: ["600", "700", "800"] });
 
-export const metadata: Metadata = {
-  title: `${CABANA.nombre} · ${CABANA.municipio}, ${CABANA.departamento}`,
-  description: `Cabaña entre cafetales en la ${CABANA.vereda}, ${CABANA.municipio}. Hasta ${CABANA.capacidad} personas. Reserva en línea.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const c = await leerConfig();
+  return {
+    title: `${c.nombre} · ${c.municipio}, ${c.departamento}`,
+    description: `Cabaña entre cafetales en la ${c.vereda}, ${c.municipio}. Hasta ${c.capacidad} personas. Reserva en línea.`,
+  };
+}
 
-const whatsapp = `https://wa.me/${CABANA.whatsapp}?text=${encodeURIComponent(
-  `Hola, quiero información sobre ${CABANA.nombre}`,
-)}`;
-const telefono = CABANA.whatsapp.replace(/^57/, "").replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const cfg = await leerConfig();
+  const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
+    `Hola, quiero información sobre ${cfg.nombre}`,
+  )}`;
+  const telefono = cfg.whatsapp.replace(/^57/, "").replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
   return (
     <html lang="es" className={`${nunito.variable} ${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
@@ -28,9 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 ☕
               </span>
               <span className="min-w-0">
-                <span className="block font-titulo font-extrabold text-lg leading-tight text-teja truncate">{CABANA.nombre}</span>
+                <span className="block font-titulo font-extrabold text-lg leading-tight text-teja truncate">{cfg.nombre}</span>
                 <span className="block text-[11px] leading-[1.4] font-bold tracking-widest uppercase text-cafe truncate">
-                  {CABANA.municipio} · {CABANA.departamento}
+                  {cfg.municipio} · {cfg.departamento}
                 </span>
               </span>
             </Link>
@@ -52,8 +55,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="border-t-[3px] border-cafe/10 mt-16 bg-white">
           <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-8 text-sm text-suave flex flex-col gap-2 sm:flex-row sm:justify-between">
             <p className="font-semibold">
-              {CABANA.nombre} · {CABANA.vereda}, {CABANA.municipio}, {CABANA.departamento}
-              {CABANA.rnt && <> · RNT {CABANA.rnt}</>}
+              {cfg.nombre} · {cfg.negocio} · {cfg.vereda}, {cfg.municipio}, {cfg.departamento}
+              {cfg.rnt && <> · RNT {cfg.rnt}</>}
             </p>
             <nav className="flex gap-4 font-semibold">
               <Link href="/condiciones" className="hover:underline">Condiciones de reserva</Link>

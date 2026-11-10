@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { aDate, sumarDias, type Fecha } from "@/lib/fechas";
 import { esFestivo } from "@/lib/festivos";
-import { precioNoche } from "@/lib/precios";
+import { tipoNoche, type ConfigPrecios } from "@/lib/precios";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -17,6 +17,7 @@ type Props = {
   ocupadas: Set<Fecha>;
   entrada: Fecha | null;
   salida: Fecha | null;
+  cfg: ConfigPrecios;
   onCambio: (entrada: Fecha | null, salida: Fecha | null) => void;
 };
 
@@ -35,7 +36,7 @@ function precioCorto(v: number) {
   return `${Math.round(v / 1000)}k`;
 }
 
-export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio }: Props) {
+export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onCambio }: Props) {
   const [desplazamiento, setDesplazamiento] = useState(0);
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -65,7 +66,14 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
       return;
     }
     if (!nochesLibres(entrada, f)) {
-      setAviso("Hay noches ocupadas en medio. Elige otra fecha de salida.");
+      // No se puede salir ese día: hay noches ocupadas en medio. Si ese día está libre,
+      // lo más probable es que la persona quiera empezar ahí; se toma como nueva llegada.
+      if (!ocupadas.has(f)) {
+        onCambio(f, null);
+        setAviso("Había noches ocupadas en medio, así que empezamos de nuevo desde este día.");
+      } else {
+        setAviso("Hay noches ocupadas en medio. Elige otra fecha de salida.");
+      }
       return;
     }
     onCambio(entrada, f);
@@ -120,6 +128,8 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
                 const puedeSerSalida = Boolean(entrada && !salida && f > entrada && nochesLibres(entrada, f));
                 const deshabilitado = pasado || (ocupada && !puedeSerSalida);
                 const festivo = esFestivo(f);
+                const noche = tipoNoche(f, cfg);
+                const especial = noche.tipo === "especial";
 
                 let clase = "bg-white border-black/[0.06] hover:border-teja/50";
                 if (esEntrada || esSalida) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)]";
@@ -134,16 +144,24 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
                     disabled={deshabilitado}
                     onClick={() => clic(f)}
                     className={`relative aspect-square rounded-[12px] border-2 flex flex-col items-center justify-center text-sm font-extrabold transition-colors disabled:cursor-not-allowed ${clase}`}
-                    aria-label={`${f}${ocupada ? ", ocupado" : ""}${festivo ? ", festivo" : ""}`}
+                    aria-label={`${f}${ocupada ? ", ocupado" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
+                    title={especial ? noche.nombre : undefined}
                     aria-pressed={esEntrada || esSalida}
                   >
                     <span className={festivo && !esEntrada && !esSalida ? "text-teja font-semibold" : ""}>
                       {Number(f.slice(8))}
                     </span>
                     {!pasado && !ocupada && (
-                      <span className={`text-[10px] font-bold leading-none ${esEntrada || esSalida ? "text-white/90" : "text-suave"}`}>
-                        {precioCorto(precioNoche(f))}
+                      <span
+                        className={`text-[10px] font-bold leading-none ${
+                          esEntrada || esSalida ? "text-white/90" : especial ? "text-cafe" : "text-suave"
+                        }`}
+                      >
+                        {precioCorto(noche.precio)}
                       </span>
+                    )}
+                    {especial && !pasado && !ocupada && !esEntrada && !esSalida && (
+                      <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-sol" aria-hidden />
                     )}
                   </button>
                 );
@@ -158,6 +176,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-black/10" /> Ocupado</span>
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-teja" /> Tu selección</span>
         <span className="flex items-center gap-1"><span className="text-teja font-semibold">15</span> Festivo</span>
+        {cfg.fechasEspeciales.length > 0 && (
+          <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sol" /> Fecha especial</span>
+        )}
         <span>Precio por noche en miles de pesos</span>
       </div>
       {aviso && <p className="mt-2 text-sm text-teja-oscura" role="alert">{aviso}</p>}

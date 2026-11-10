@@ -22,6 +22,8 @@ export type Reserva = {
   telefono: string;
   total: number;
   anticipo: number;
+  descuento: number;
+  descuentoNombre?: string;
   estado: EstadoReserva;
   creadaEn: string;
   expiraEn: string;
@@ -44,6 +46,8 @@ type Fila = {
   telefono: string;
   total: number;
   anticipo: number;
+  descuento: number;
+  descuento_nombre: string | null;
   estado: EstadoReserva;
   creada_en: Date;
   expira_en: Date;
@@ -56,7 +60,7 @@ type Fila = {
 // Una pendiente vencida se lee como expirada aunque nadie la haya actualizado todavía.
 const COLUMNAS = `
   codigo, entrada::text as entrada, salida::text as salida, huespedes, nombre, documento,
-  email, telefono, total, anticipo,
+  email, telefono, total, anticipo, descuento, descuento_nombre,
   case when estado = 'pendiente' and expira_en <= now() then 'expirada' else estado end as estado,
   creada_en, expira_en, pago_proveedor, pago_id, pago_fecha, notas`;
 
@@ -72,6 +76,8 @@ function aReserva(f: Fila): Reserva {
     telefono: f.telefono,
     total: f.total,
     anticipo: f.anticipo,
+    descuento: f.descuento,
+    ...(f.descuento_nombre ? { descuentoNombre: f.descuento_nombre } : {}),
     estado: f.estado,
     creadaEn: f.creada_en.toISOString(),
     expiraEn: f.expira_en.toISOString(),
@@ -135,12 +141,12 @@ export async function crearReserva(
 
       const [fila] = await tx.unsafe<Fila[]>(
         `insert into reservas (codigo, entrada, salida, huespedes, nombre, documento, email,
-                               telefono, total, anticipo, expira_en)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now() + make_interval(mins => $11))
+                               telefono, total, anticipo, descuento, descuento_nombre, expira_en)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now() + make_interval(mins => $13))
          returning ${COLUMNAS}`,
         [
           nuevoCodigo(), d.entrada, d.salida, d.huespedes, d.nombre, d.documento, d.email,
-          d.telefono, d.total, d.anticipo, minutosApartado,
+          d.telefono, d.total, d.anticipo, d.descuento, d.descuentoNombre ?? null, minutosApartado,
         ],
       );
       return aReserva(fila);
@@ -225,24 +231,102 @@ export async function cancelarReserva(codigo: string): Promise<boolean> {
   return filas.length > 0;
 }
 
-/** Para el panel: lo de los últimos 30 días en adelante (con tope). */
-export async function listarTodo(): Promise<{ reservas: Reserva[]; bloqueos: Bloqueo[] }> {
+export type FiltroReservas = {
+  vista: "proximas" | "pasadas" | "todas";
+  estado: EstadoReserva | "todos";
+  q: string;
+  pagina: number;
+};
+
+export const POR_PAGINA = 50;
+
+/** Búsqueda del panel: por vista de fechas, estado y texto (nombre, documento, código, teléfono). */
+export async function buscarReservas(f: FiltroReservas): Promise<{ reservas: Reserva[]; total: number }> {
   const sql = db();
-  const [reservas, bloqueos] = await Promise.all([
+  const condiciones: string[] = [];
+  const params: unknown[] = [];
+  const estadoReal = `case when estado = 'pendiente' and expira_en <= now() then 'expirada' else estado end`;
+
+  if (f.vista === "proximas") condiciones.push("salida >= current_date");
+  if (f.vista === "pasadas") condiciones.push("salida < current_date");
+  if (f.estado !== "todos") {
+    params.push(f.estado);
+    condiciones.push(`${estadoReal} = $${params.length}`);
+  }
+  const q = f.q.trim().slice(0, 60);
+  if (q) {
+    params.push(`%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`);
+    const p = `$${params.length}`;
+    condiciones.push(`(nombre ilike ${p} or documento ilike ${p} or codigo ilike ${p} or telefono ilike ${p} or email ilike ${p})`);
+  }
+  const where = condiciones.length ? `where ${condiciones.join(" and ")}` : "";
+  const orden = f.vista === "pasadas" ? "entrada desc" : "entrada asc";
+  const offset = Math.max(0, f.pagina - 1) * POR_PAGINA;
+
+  const [filas, [cuenta]] = await Promise.all([
     sql.unsafe<Fila[]>(
-      `select ${COLUMNAS} from reservas
-        where salida >= current_date - 30 or notas is not null
-        order by entrada
-        limit 500`,
+      `select ${COLUMNAS} from reservas ${where} order by ${orden} limit ${POR_PAGINA} offset ${offset}`,
+      params as never[],
     ),
-    sql<Bloqueo[]>`
-      select id::text as id, desde::text as desde, hasta::text as hasta, motivo
-        from bloqueos
-       where hasta >= current_date - 30
-       order by desde
-       limit 200`,
+    sql.unsafe<{ n: number }[]>(`select count(*)::int as n from reservas ${where}`, params as never[]),
   ]);
-  return { reservas: reservas.map(aReserva), bloqueos: [...bloqueos] };
+  return { reservas: filas.map(aReserva), total: cuenta.n };
+}
+
+export type Resumen = {
+  proximasConfirmadas: number;
+  pendientes: number;
+  nochesOcupadasMes: number;
+  diasDelMes: number;
+  ingresosMes: number; // total de reservas confirmadas que llegan este mes
+  anticiposMes: number;
+  conNotas: Reserva[];
+};
+
+/** Cifras del tablero, con el mes calendario de Colombia. */
+export async function resumen(): Promise<Resumen> {
+  const sql = db();
+  const [[cifras], notas] = await Promise.all([
+    sql<{
+      proximas: number; pendientes: number; noches: number; dias: number; ingresos: number; anticipos: number;
+    }[]>`
+      with mes as (
+        select date_trunc('month', (now() at time zone 'America/Bogota'))::date as ini,
+               (date_trunc('month', (now() at time zone 'America/Bogota')) + interval '1 month')::date as fin
+      )
+      select
+        (select count(*) from reservas where estado = 'confirmada' and salida >= current_date)::int as proximas,
+        (select count(*) from reservas where estado = 'pendiente' and expira_en > now())::int as pendientes,
+        (select count(distinct d) from reservas r, mes,
+           generate_series(greatest(r.entrada, mes.ini), least(r.salida, mes.fin) - 1, interval '1 day') d
+          where r.estado = 'confirmada')::int as noches,
+        (select fin - ini from mes)::int as dias,
+        (select coalesce(sum(total), 0) from reservas, mes
+          where estado = 'confirmada' and entrada >= mes.ini and entrada < mes.fin)::int as ingresos,
+        (select coalesce(sum(anticipo), 0) from reservas, mes
+          where estado = 'confirmada' and entrada >= mes.ini and entrada < mes.fin)::int as anticipos`,
+    sql.unsafe<Fila[]>(`select ${COLUMNAS} from reservas where notas is not null order by creada_en desc limit 20`),
+  ]);
+  return {
+    proximasConfirmadas: cifras.proximas,
+    pendientes: cifras.pendientes,
+    nochesOcupadasMes: cifras.noches,
+    diasDelMes: cifras.dias,
+    ingresosMes: cifras.ingresos,
+    anticiposMes: cifras.anticipos,
+    conNotas: notas.map(aReserva),
+  };
+}
+
+export async function listarBloqueos(): Promise<Bloqueo[]> {
+  const sql = db();
+  const filas = await sql<Bloqueo[]>`
+    select id::text as id, desde::text as desde, hasta::text as hasta, motivo
+      from bloqueos
+     where hasta >= current_date
+     order by desde
+     limit 200`;
+  return [...filas];
 }
 
 export async function crearBloqueo(desde: Fecha, hasta: Fecha, motivo: string): Promise<void> {
