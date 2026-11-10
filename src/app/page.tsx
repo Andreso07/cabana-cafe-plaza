@@ -1,16 +1,27 @@
 import Image from "next/image";
-import { CABANA, REGLAS, SERVICIOS } from "@/config/cabana";
+import { CABANA, PLANES, PRECIOS, REGLAS, SERVICIOS } from "@/config/cabana";
 import { Reservar } from "@/components/Reservar";
+import { pesos } from "@/lib/precios";
 import { wompiConfigurado } from "@/lib/wompi";
 
-export default function Inicio() {
-  const whatsapp = `https://wa.me/${CABANA.whatsapp}?text=${encodeURIComponent(
-    `Hola, quiero información sobre ${CABANA.nombre}`,
-  )}`;
+function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono?: "teja" | "cafe" | "suave" }) {
+  const estilos = {
+    teja: "bg-teja text-white shadow-[0_3px_0_var(--teja-oscura)]",
+    cafe: "bg-cafe/15 text-cafe",
+    suave: "bg-teja/10 text-teja",
+  }[tono];
+  return (
+    <span className={`inline-flex items-center gap-2 font-extrabold text-[11px] tracking-[0.14em] uppercase px-3.5 py-1.5 rounded-full ${estilos}`}>
+      {children}
+    </span>
+  );
+}
 
+export default function Inicio() {
   return (
     <main>
-      <section className="relative h-[70vh] min-h-[420px] w-full">
+      {/* Banner */}
+      <section className="relative h-[72vh] min-h-[440px] w-full">
         <Image
           src="/cabana.jpg"
           alt={`${CABANA.nombre}: cabaña con techo de teja roja y frente de vidrio entre cafetales, con montañas al fondo`}
@@ -19,63 +30,180 @@ export default function Inicio() {
           sizes="100vw"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-5xl px-4 pb-10 text-white">
-          <p className="text-sm uppercase tracking-widest opacity-90">
-            {CABANA.vereda} · {CABANA.municipio}, {CABANA.departamento}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-10 text-white">
+          <Etiqueta>🏡 {CABANA.vereda} · {CABANA.municipio}</Etiqueta>
+          <h1 className="font-titulo mt-4 text-[40px] sm:text-[60px] leading-[0.95] font-extrabold tracking-tight">
+            Despierta entre
+            <span className="block text-sol">cafetales y montañas</span>
+          </h1>
+          <p className="mt-3 max-w-[46ch] text-base sm:text-lg font-semibold text-white/90">
+            Una cabaña para {CABANA.capacidad} personas en el corazón cafetero de {CABANA.departamento}.
           </p>
-          <h1 className="font-titulo text-4xl sm:text-6xl mt-2">{CABANA.nombre}</h1>
-          <p className="mt-3 max-w-xl text-lg opacity-95">
-            Despierta entre cafetales, con las montañas de Nariño al frente.
-          </p>
-          <a
-            href="#reservar"
-            className="mt-6 inline-block rounded-full bg-teja hover:bg-teja-oscura px-6 py-3 font-medium"
-          >
-            Ver disponibilidad
-          </a>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a href="#reservar" className="boton-goma font-titulo bg-teja text-white font-extrabold text-base px-7 py-3.5 rounded-full">
+              Reservar fechas →
+            </a>
+            <a href="#planes" className="font-titulo bg-white/15 backdrop-blur border-2 border-white/40 text-white font-extrabold text-base px-6 py-3 rounded-full hover:bg-white/25">
+              Ver planes
+            </a>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-5xl px-4 py-12 grid gap-10 md:grid-cols-2">
-        <div>
-          <h2 className="font-titulo text-2xl mb-4">La cabaña</h2>
-          <ul className="space-y-2">
+      {/* Calendario y formulario */}
+      <section id="reservar" className="relative scroll-mt-20 fondo-puntos">
+        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-10 md:py-16">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+            <div>
+              <Etiqueta>📅 Reserva en 2 minutos</Etiqueta>
+              <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">
+                Aparta tus fechas
+              </h2>
+              <p className="mt-2 text-sm font-bold text-suave">
+                Elige llegada y salida, déjanos tus datos y paga el {PRECIOS.porcentajeAnticipo}% para confirmar.
+              </p>
+            </div>
+            <span className="flex items-center gap-2 text-[11px] font-extrabold bg-white border border-black/5 rounded-full px-3 py-2">
+              <span className="size-2 rounded-full bg-cafe animate-pulse" /> Disponibilidad en tiempo real
+            </span>
+          </div>
+          <Reservar conWompi={wompiConfigurado()} />
+        </div>
+      </section>
+
+      {/* Servicios */}
+      <section id="servicios" className="bg-white border-y-[3px] border-cafe/10">
+        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+          <div className="text-center max-w-[640px] mx-auto">
+            <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
+            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">
+              Todo para descansar
+            </h2>
+          </div>
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
             {SERVICIOS.map((s) => (
-              <li key={s} className="flex gap-2">
-                <span className="text-cafe">●</span> {s}
-              </li>
+              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
+                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
+                  {s.icono}
+                </span>
+                <span className="leading-tight min-w-0">
+                  <span className="block font-extrabold text-sm">{s.titulo}</span>
+                  <span className="block text-xs font-bold text-suave">{s.detalle}</span>
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
-        <div>
-          <h2 className="font-titulo text-2xl mb-4">Antes de venir</h2>
-          <ul className="space-y-2">
-            {REGLAS.map((r) => (
-              <li key={r} className="flex gap-2">
-                <span className="text-teja">●</span> {r}
-              </li>
-            ))}
-          </ul>
-          <a href={CABANA.mapsUrl} target="_blank" rel="noopener" className="mt-4 inline-block underline text-cafe">
-            Cómo llegar (Google Maps)
+      </section>
+
+      {/* Planes */}
+      <section id="planes" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+        <div className="text-center max-w-[640px] mx-auto">
+          <Etiqueta tono="suave">🌿 Nuestros planes</Etiqueta>
+          <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">
+            Elige tu escapada
+          </h2>
+          <p className="mt-3 text-sm md:text-[15px] font-bold text-suave">
+            Precios por la cabaña completa, no por persona. El total exacto lo ves en el calendario.
+          </p>
+        </div>
+
+        <div className="mt-12 grid md:grid-cols-3 gap-6 items-stretch">
+          {PLANES.map((p) => (
+            <div
+              key={p.id}
+              className={`relative rounded-[28px] border-[3px] bg-white p-6 flex flex-col ${
+                p.destacado
+                  ? "border-teja shadow-[0_12px_0_var(--teja)] md:-translate-y-1"
+                  : "border-black/10"
+              }`}
+            >
+              {p.destacado && (
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-teja text-white text-[10px] font-black tracking-widest px-3 py-1 rounded-full shadow-[0_3px_0_var(--teja-oscura)]">
+                  ⭐ EL MÁS ELEGIDO ⭐
+                </span>
+              )}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-titulo font-extrabold text-lg leading-tight uppercase tracking-tight">{p.nombre}</h3>
+                  <p className="flex items-baseline gap-1 mt-1 flex-wrap">
+                    <span className="text-xs font-bold text-suave">Desde</span>
+                    <span className="font-titulo font-extrabold text-[30px] leading-none">{pesos(p.precio)}</span>
+                    <span className="text-xs font-bold text-suave">{p.unidad}</span>
+                  </p>
+                </div>
+                <span
+                  className={`size-11 shrink-0 rounded-full grid place-items-center text-xl border-2 ${
+                    p.destacado ? "bg-teja border-teja" : "bg-crema border-black/5"
+                  }`}
+                  aria-hidden
+                >
+                  {p.icono}
+                </span>
+              </div>
+              {p.incluyeAnterior && (
+                <span className="mt-4 w-fit text-[11px] font-black tracking-wide text-teja bg-teja/10 rounded-full px-3 py-1">
+                  Incluye {p.incluyeAnterior} +
+                </span>
+              )}
+              <ul className="mt-4 space-y-2.5 flex-1">
+                {p.incluye.map((item) => (
+                  <li key={item} className="flex gap-2 items-start text-sm font-bold leading-snug">
+                    <span className="size-5 shrink-0 mt-0.5 rounded-full bg-cafe/15 text-cafe grid place-items-center text-[11px]" aria-hidden>✓</span>
+                    <span className="text-tinta/80">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="#reservar"
+                className={`mt-6 block text-center rounded-full py-3 font-extrabold text-sm border-2 ${
+                  p.destacado
+                    ? "boton-goma bg-teja text-white border-teja"
+                    : "bg-crema border-black/5 text-tinta/70 hover:border-teja/40"
+                }`}
+              >
+                Ver fechas disponibles
+              </a>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 bg-sol/20 border-2 border-dashed border-sol/50 rounded-[18px] px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-[#7a4e00]">
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">👥 Hasta {CABANA.capacidad} personas</span>
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">💳 Pagas el {PRECIOS.porcentajeAnticipo}% al reservar</span>
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">📅 Puentes: mínimo {PRECIOS.minNochesPuente} noches</span>
+          <span className="bg-white rounded-full px-3 py-1 border border-sol/40">🕒 Entrada {CABANA.checkIn} · Salida {CABANA.checkOut}</span>
+        </div>
+      </section>
+
+      {/* Antes de venir */}
+      <section className="mx-auto max-w-[1120px] px-4 md:px-6">
+        <div className="rounded-[28px] border-[3px] border-cafe/15 bg-white p-6 md:p-8 grid gap-6 md:grid-cols-[1.2fr_0.8fr] items-center">
+          <div>
+            <h2 className="font-titulo text-2xl font-extrabold">Antes de venir</h2>
+            <ul className="mt-3 space-y-2">
+              {REGLAS.map((r) => (
+                <li key={r} className="flex gap-2 text-sm font-semibold">
+                  <span className="text-teja" aria-hidden>●</span> {r}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <a
+            href={CABANA.mapsUrl}
+            target="_blank"
+            rel="noopener"
+            className="flex items-center gap-3 rounded-[20px] bg-cafe text-white p-5 shadow-[0_6px_0_var(--cafe-oscuro)] hover:translate-y-px"
+          >
+            <span className="text-3xl" aria-hidden>📍</span>
+            <span>
+              <span className="block font-titulo font-extrabold text-lg">Cómo llegar</span>
+              <span className="block text-sm font-semibold text-white/85">{CABANA.vereda}, {CABANA.municipio}</span>
+            </span>
           </a>
         </div>
       </section>
-
-      <section id="reservar" className="mx-auto max-w-5xl px-4 scroll-mt-6">
-        <h2 className="font-titulo text-3xl mb-6">Reserva tus fechas</h2>
-        <Reservar conWompi={wompiConfigurado()} />
-      </section>
-
-      <a
-        href={whatsapp}
-        target="_blank"
-        rel="noopener"
-        className="fixed bottom-5 right-5 rounded-full bg-[#25D366] text-white shadow-lg px-5 py-3 font-medium hover:brightness-95"
-      >
-        WhatsApp
-      </a>
     </main>
   );
 }

@@ -11,7 +11,7 @@ import { Calendario } from "./Calendario";
 type Disponibilidad = { hoy: Fecha; ocupadas: Fecha[] };
 
 const campo =
-  "w-full rounded-lg border border-linea bg-white px-3 py-2 outline-none focus:border-teja focus:ring-2 focus:ring-teja/20";
+  "mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold outline-none focus:border-teja focus:bg-white";
 
 export function Reservar({ conWompi }: { conWompi: boolean }) {
   const router = useRouter();
@@ -92,8 +92,8 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
   if (!disp) return <p className="text-suave">Cargando disponibilidad…</p>;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
-      <div className="rounded-2xl border border-linea bg-white/60 p-4 sm:p-6">
+    <div className="grid gap-6 md:gap-8 lg:grid-cols-[1fr_380px] items-start">
+      <div className="rounded-[24px] border-[3px] border-black/5 bg-white p-4 sm:p-5">
         <Calendario
           hoy={disp.hoy}
           ultimoDia={sumarDias(disp.hoy, PRECIOS.diasMaximosAdelante)}
@@ -108,21 +108,24 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
         />
       </div>
 
-      <div className="rounded-2xl border border-linea bg-white p-4 sm:p-6 h-fit">
+      <div className="rounded-[28px] border-[3px] border-teja bg-white p-5 sm:p-6 shadow-[0_12px_0_var(--teja)] lg:sticky lg:top-24">
+        <p className="text-[11px] font-black tracking-widest text-teja/70">TU RESERVA</p>
         {!cot ? (
-          <div className="text-suave">
-            <p className="font-titulo text-2xl text-tinta">
-              Desde {pesos(PRECIOS.nocheEntreSemana)} <span className="text-base font-sans text-suave">/ noche</span>
+          <div className="mt-2 text-suave">
+            <p className="font-titulo text-[28px] font-extrabold text-tinta leading-none">
+              Desde {pesos(PRECIOS.nocheEntreSemana)} <span className="text-base font-sans font-bold text-suave">/ noche</span>
             </p>
-            <p className="mt-2 text-sm">Elige tus fechas en el calendario para ver el total.</p>
+            <p className="mt-3 text-sm font-semibold">
+              📅 Elige en el calendario el día de llegada y el de salida para ver el total y llenar tus datos.
+            </p>
           </div>
         ) : (
-          <form onSubmit={enviar} className="flex flex-col gap-3">
-            <div className="text-sm">
+          <form onSubmit={enviar} className="mt-2 flex flex-col gap-3">
+            <div className="text-sm font-semibold">
               <p><span className="text-suave">Llegada:</span> {formatoLargo(entrada!)}</p>
               <p><span className="text-suave">Salida:</span> {formatoLargo(salida!)}</p>
             </div>
-            <ul className="text-sm border-y border-linea py-2">
+            <ul className="text-sm font-semibold bg-crema rounded-[16px] border-2 border-dashed border-teja/20 px-3 py-2">
               {cot.noches.map((n) => (
                 <li key={n.fecha} className="flex justify-between">
                   <span>{formatoLargo(n.fecha)}</span>
@@ -151,7 +154,7 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
               </p>
             ) : (
               <>
-                <label className="text-sm">
+                <label className="text-sm font-bold">
                   Huéspedes
                   <select name="huespedes" className={campo} defaultValue={2}>
                     {Array.from({ length: CABANA.capacidad }, (_, i) => (
@@ -159,19 +162,19 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
                     ))}
                   </select>
                 </label>
-                <label className="text-sm">
+                <label className="text-sm font-bold">
                   Nombre completo
                   <input name="nombre" required minLength={3} autoComplete="name" className={campo} />
                 </label>
-                <label className="text-sm">
+                <label className="text-sm font-bold">
                   Número de documento
                   <input name="documento" required minLength={5} inputMode="numeric" className={campo} />
                 </label>
-                <label className="text-sm">
+                <label className="text-sm font-bold">
                   Correo
                   <input name="email" type="email" required autoComplete="email" className={campo} />
                 </label>
-                <label className="text-sm">
+                <label className="text-sm font-bold">
                   Celular (WhatsApp)
                   <input name="telefono" type="tel" required autoComplete="tel" className={campo} />
                 </label>
@@ -193,9 +196,9 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
                 <button
                   type="submit"
                   disabled={enviando}
-                  className="rounded-full bg-teja hover:bg-teja-oscura text-white font-medium py-3 disabled:opacity-60"
+                  className="boton-goma mt-1 font-titulo rounded-full bg-teja text-white font-extrabold text-base py-3.5 disabled:opacity-60"
                 >
-                  {enviando ? "Apartando fechas…" : "Reservar y pagar"}
+                  {enviando ? "Apartando fechas…" : "Reservar y pagar →"}
                 </button>
                 <p className="text-xs text-suave text-center">
                   {conWompi

@@ -50,13 +50,62 @@ export const PRECIOS = {
   diasMaximosAdelante: 365,
 } as const;
 
+// EJEMPLO: confirma que la cabaña tiene cada uno; quita o agrega los que sean.
 export const SERVICIOS = [
-  "Capacidad para 6 personas",
-  "Vista a las montañas de Nariño",
-  "Rodeada de cafetales",
-  "Terraza",
-  "Cocina equipada",
-  "Parqueadero",
+  { icono: "👨‍👩‍👧‍👦", titulo: "Hasta 6 personas", detalle: "Cabaña completa para tu grupo" },
+  { icono: "⛰️", titulo: "Vista a las montañas", detalle: "Amaneceres sobre Nariño" },
+  { icono: "☕", titulo: "Entre cafetales", detalle: "Rodeada de cultivo de café" },
+  { icono: "🌅", titulo: "Terraza", detalle: "Para el café de la tarde" },
+  { icono: "🍳", titulo: "Cocina equipada", detalle: "Cocina lo que quieras" },
+  { icono: "🚗", titulo: "Parqueadero", detalle: "Dentro de la propiedad" },
+];
+
+// Planes de la portada. Los precios salen de PRECIOS, así que siempre coinciden
+// con el calendario. Lo que incluye cada uno es EJEMPLO: ajústalo.
+export const PLANES = [
+  {
+    id: "semana",
+    nombre: "Escapada entre semana",
+    icono: "🌿",
+    precio: PRECIOS.nocheEntreSemana,
+    unidad: "/ noche",
+    incluyeAnterior: null,
+    incluye: [
+      "Domingo a jueves",
+      "Cabaña completa para hasta 6 personas",
+      "Cocina equipada y parqueadero",
+      "Silencio y desconexión",
+    ],
+    destacado: false,
+  },
+  {
+    id: "finde",
+    nombre: "Fin de semana",
+    icono: "☕",
+    precio: PRECIOS.nocheFinDeSemana * 2,
+    unidad: "/ 2 noches",
+    incluyeAnterior: "Escapada",
+    incluye: [
+      "Llega el viernes, sal el domingo",
+      "También vísperas de festivo",
+      "Ideal para familia o amigos",
+    ],
+    destacado: true,
+  },
+  {
+    id: "temporada",
+    nombre: "Temporada alta",
+    icono: "🎄",
+    precio: PRECIOS.nocheTemporadaAlta,
+    unidad: "/ noche",
+    incluyeAnterior: "Escapada",
+    incluye: [
+      "15 de diciembre a 15 de enero",
+      "15 de junio a 15 de julio",
+      "Reserva con tiempo: se llena rápido",
+    ],
+    destacado: false,
+  },
 ];
 
 export const REGLAS = [

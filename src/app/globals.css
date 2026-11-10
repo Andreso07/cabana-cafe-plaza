@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --crema: #faf6ef;
-  --tinta: #2b2620;
-  --suave: #6b6157;
+  --crema: #fffbf5;
+  --tinta: #3b2a20;
+  --suave: #7a6a5e;
   --teja: #c8502f;
-  --teja-oscura: #a33f22;
-  --cafe: #3f5a3a;
-  --linea: #e6ddcf;
+  --teja-oscura: #8e3318;
+  --cafe: #3f6b3a;
+  --cafe-oscuro: #2b4a28;
+  --sol: #f5b63f;
+  --linea: #ece3d6;
 }
 
 @theme inline {
@@ -17,12 +19,39 @@
   --color-teja: var(--teja);
   --color-teja-oscura: var(--teja-oscura);
   --color-cafe: var(--cafe);
+  --color-cafe-oscuro: var(--cafe-oscuro);
+  --color-sol: var(--sol);
   --color-linea: var(--linea);
-  --font-sans: var(--font-geist-sans);
-  --font-titulo: var(--font-fraunces);
+  --font-sans: var(--font-nunito);
+  --font-titulo: var(--font-baloo);
 }
 
 body {
   background: var(--crema);
   color: var(--tinta);
+}
+
+/* Patrón de puntos suave, como granos de café */
+.fondo-puntos {
+  background-image: radial-gradient(color-mix(in srgb, var(--cafe) 9%, transparent) 2px, transparent 2.5px);
+  background-size: 28px 28px;
+}
+
+/* Botón "de goma": sombra sólida que se hunde al pulsar */
+.boton-goma {
+  box-shadow: 0 6px 0 var(--teja-oscura);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.boton-goma:hover { transform: translateY(1px); box-shadow: 0 5px 0 var(--teja-oscura); }
+.boton-goma:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--teja-oscura); }
+.boton-goma:disabled { transform: none; box-shadow: 0 6px 0 var(--teja-oscura); }
+
+.boton-whatsapp {
+  box-shadow: 0 4px 0 #1da851;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.boton-whatsapp:active { transform: translateY(2px); box-shadow: 0 2px 0 #1da851; }
+
+@media (prefers-reduced-motion: reduce) {
+  .boton-goma, .boton-whatsapp { transition: none; }
 }

@@ -83,7 +83,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
         >
           ‹
         </button>
-        <p className="text-sm text-suave">
+        <p className="text-xs font-extrabold bg-white border border-black/5 rounded-full px-3 py-1.5">
           {!entrada ? "Elige el día de llegada" : !salida ? "Ahora elige el día de salida" : "Fechas elegidas"}
         </p>
         <button
@@ -100,15 +100,15 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
       <div className="grid gap-6 md:grid-cols-2">
         {meses.map(({ anio, mes }, i) => (
           <div key={`${anio}-${mes}`} className={i === 1 ? "hidden md:block" : ""}>
-            <h3 className="text-center font-medium mb-2">
+            <h3 className="text-center font-titulo font-extrabold text-lg mb-2">
               {MESES[mes]} {anio}
             </h3>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs text-suave mb-1">
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-black text-black/30 mb-1">
               {DIAS.map((d, j) => (
                 <span key={j}>{d}</span>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1.5">
               {diasDelMes(anio, mes).map((f, j) => {
                 if (!f) return <span key={j} />;
                 const pasado = f < hoy || f > ultimoDia;
@@ -121,11 +121,11 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
                 const deshabilitado = pasado || (ocupada && !puedeSerSalida);
                 const festivo = esFestivo(f);
 
-                let clase = "bg-white hover:border-teja";
-                if (esEntrada || esSalida) clase = "bg-teja text-white border-teja";
-                else if (enRango) clase = "bg-teja/15 border-teja/30";
-                else if (pasado) clase = "bg-transparent text-suave/40";
-                else if (ocupada) clase = "bg-linea/70 text-suave line-through";
+                let clase = "bg-white border-black/[0.06] hover:border-teja/50";
+                if (esEntrada || esSalida) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)]";
+                else if (enRango) clase = "bg-teja/15 border-teja/25";
+                else if (pasado) clase = "bg-black/[0.03] border-transparent text-black/20";
+                else if (ocupada) clase = "bg-black/[0.06] border-transparent text-black/30 line-through";
 
                 return (
                   <button
@@ -133,7 +133,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
                     type="button"
                     disabled={deshabilitado}
                     onClick={() => clic(f)}
-                    className={`relative aspect-square rounded-md border border-transparent flex flex-col items-center justify-center text-sm transition-colors disabled:cursor-not-allowed ${clase}`}
+                    className={`relative aspect-square rounded-[12px] border-2 flex flex-col items-center justify-center text-sm font-extrabold transition-colors disabled:cursor-not-allowed ${clase}`}
                     aria-label={`${f}${ocupada ? ", ocupado" : ""}${festivo ? ", festivo" : ""}`}
                     aria-pressed={esEntrada || esSalida}
                   >
@@ -141,7 +141,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
                       {Number(f.slice(8))}
                     </span>
                     {!pasado && !ocupada && (
-                      <span className={`text-[10px] leading-none ${esEntrada || esSalida ? "text-white/90" : "text-suave"}`}>
+                      <span className={`text-[10px] font-bold leading-none ${esEntrada || esSalida ? "text-white/90" : "text-suave"}`}>
                         {precioCorto(precioNoche(f))}
                       </span>
                     )}
@@ -153,9 +153,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, onCambio
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-suave">
-        <span className="flex items-center gap-1"><span className="size-3 rounded bg-white border border-linea" /> Disponible</span>
-        <span className="flex items-center gap-1"><span className="size-3 rounded bg-linea" /> Ocupado</span>
+      <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-suave">
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-white border border-black/10" /> Disponible</span>
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-black/10" /> Ocupado</span>
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-teja" /> Tu selección</span>
         <span className="flex items-center gap-1"><span className="text-teja font-semibold">15</span> Festivo</span>
         <span>Precio por noche en miles de pesos</span>
