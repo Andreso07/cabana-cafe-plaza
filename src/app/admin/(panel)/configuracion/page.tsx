@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { BotonConfirmar } from "@/components/BotonConfirmar";
+import { esAdmin } from "@/lib/admin";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
@@ -49,6 +51,8 @@ function Campo({ nombre, titulo, valor, ayuda, ...resto }: {
 }
 
 export default async function Configuracion({ searchParams }: PageProps<"/admin/configuracion">) {
+  // Ver la nota en ../page.tsx: layout y página corren en paralelo.
+  if (!(await esAdmin())) redirect("/admin/entrar");
   const sp = await searchParams;
   const ok = typeof sp.ok === "string" ? sp.ok : null;
   const error = typeof sp.error === "string" ? sp.error : null;

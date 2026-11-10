@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { BotonConfirmar } from "@/components/BotonConfirmar";
+import { esAdmin } from "@/lib/admin";
 import { diasEntre, formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
 import {
@@ -36,6 +38,9 @@ function Cifra({ titulo, valor, detalle, tono }: { titulo: string; valor: string
 }
 
 export default async function Panel({ searchParams }: PageProps<"/admin">) {
+  // El layout también lo comprueba, pero Next ejecuta layout y página en paralelo:
+  // sin esto, una visita sin sesión consultaría las reservas antes de ser redirigida.
+  if (!(await esAdmin())) redirect("/admin/entrar");
   const sp = await searchParams;
   const uno = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
   const vista = (uno(sp.vista) in VISTAS ? uno(sp.vista) : "proximas") as FiltroReservas["vista"];
