@@ -71,9 +71,13 @@ cualquier solape aunque el código fallara.
    **East US (North Virginia)**, que es la de Vercel por defecto. Guarda la contraseña de
    la base que te pide.
 2. En **SQL Editor**, pega el contenido de `db/schema.sql` y pulsa *Run*.
-3. En **Connect** (arriba), copia la cadena del **Transaction pooler** (puerto 6543) y
+3. En **Connect** (arriba), copia la cadena del **Session pooler** (puerto 5432) y
    reemplaza `[YOUR-PASSWORD]` por tu contraseña. Esa cadena es la `DATABASE_URL` que va en
    las variables de entorno de Vercel.
+
+   **No uses el Transaction pooler (6543).** Con varias consultas a la vez pierde respuestas
+   o las entrega a la consulta equivocada (medido: 27 de 48 mal). Si la cadena trae el 6543,
+   `src/lib/db.ts` lo cambia solo al 5432 y lo avisa en el log.
 
 Las tablas tienen RLS activado y ninguna política. Así la API pública de Supabase no deja
 leer los datos de los huéspedes; solo la web los ve, porque entra con la cadena de conexión.
