@@ -10,7 +10,7 @@ export const CABANA = {
   checkIn: "3:00 p. m.",
   checkOut: "12:00 m.",
   // Número de WhatsApp con indicativo, sin "+" ni espacios. EJEMPLO.
-  whatsapp: "573000000000",
+  whatsapp: "573176954648",
   // Número del Registro Nacional de Turismo. Mientras sea null no se muestra.
   rnt: null as string | null,
   // Enlace de Google Maps a la cabaña. EJEMPLO.
@@ -18,12 +18,12 @@ export const CABANA = {
 } as const;
 
 // Pago por transferencia mientras Wompi no esté activo. Se muestra al cliente
-// en la página de su reserva. EJEMPLO: pon tus datos reales antes de publicar.
+// en la página de su reserva. Lo que esté en null no se muestra.
 export const PAGO_MANUAL = {
-  titular: "Nombre del titular",
-  nequi: "300 000 0000",
-  // Llave Bre-B (celular, cédula, correo o alfanumérica). null para no mostrarla.
-  llaveBreB: null as string | null,
+  // Llave Bre-B: se paga desde Nequi o desde cualquier banco, sin costo.
+  llaveBreB: "@3176954648" as string | null,
+  nequi: null as string | null,
+  titular: null as string | null,
 } as const;
 
 export const PRECIOS = {

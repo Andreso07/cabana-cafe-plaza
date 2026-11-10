@@ -200,7 +200,7 @@ export function Reservar({ conWompi }: { conWompi: boolean }) {
                 <p className="text-xs text-suave text-center">
                   {conWompi
                     ? `Apartamos tus fechas ${PRECIOS.minutosApartado} minutos mientras pagas con Nequi, PSE o tarjeta.`
-                    : `Apartamos tus fechas ${PRECIOS.minutosApartadoManual / 60} horas mientras pagas por Nequi.`}
+                    : `Apartamos tus fechas ${PRECIOS.minutosApartadoManual / 60} horas mientras pagas por Bre-B (desde Nequi o tu banco).`}
                 </p>
               </>
             )}

@@ -76,9 +76,17 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
           ) : (
             <div className="rounded-xl border border-linea bg-white p-4 text-sm space-y-2">
               <p className="font-medium">Paga {pesos(r.anticipo)} por transferencia:</p>
-              <p><span className="text-suave">Nequi:</span> <strong>{PAGO_MANUAL.nequi}</strong> · {PAGO_MANUAL.titular}</p>
               {PAGO_MANUAL.llaveBreB && (
-                <p><span className="text-suave">Llave Bre-B (desde cualquier banco):</span> <strong>{PAGO_MANUAL.llaveBreB}</strong></p>
+                <p>
+                  <span className="text-suave">Llave Bre-B (desde Nequi o cualquier banco):</span>{" "}
+                  <strong className="select-all">{PAGO_MANUAL.llaveBreB}</strong>
+                </p>
+              )}
+              {PAGO_MANUAL.nequi && (
+                <p><span className="text-suave">Nequi:</span> <strong>{PAGO_MANUAL.nequi}</strong></p>
+              )}
+              {PAGO_MANUAL.titular && (
+                <p><span className="text-suave">A nombre de:</span> {PAGO_MANUAL.titular}</p>
               )}
               <p>
                 En la descripción escribe tu código <strong>{r.codigo}</strong> y envíanos el comprobante por WhatsApp.
