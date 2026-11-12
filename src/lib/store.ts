@@ -28,6 +28,8 @@ export type Reserva = {
   creadaEn: string;
   expiraEn: string;
   pago?: { proveedor: "wompi" | "manual" | "simulado"; id: string; fecha: string };
+  /** Comprobante que el cliente escribió en la web. No es un pago verificado. */
+  pagoReportado?: { referencia: string; fecha: string };
   notas?: string;
 };
 
@@ -54,6 +56,8 @@ type Fila = {
   pago_proveedor: "wompi" | "manual" | "simulado" | null;
   pago_id: string | null;
   pago_fecha: Date | null;
+  pago_reportado: string | null;
+  pago_reportado_en: Date | null;
   notas: string | null;
 };
 
@@ -62,7 +66,7 @@ const COLUMNAS = `
   codigo, entrada::text as entrada, salida::text as salida, huespedes, nombre, documento,
   email, telefono, total, anticipo, descuento, descuento_nombre,
   case when estado = 'pendiente' and expira_en <= now() then 'expirada' else estado end as estado,
-  creada_en, expira_en, pago_proveedor, pago_id, pago_fecha, notas`;
+  creada_en, expira_en, pago_proveedor, pago_id, pago_fecha, pago_reportado, pago_reportado_en, notas`;
 
 function aReserva(f: Fila): Reserva {
   return {
@@ -83,6 +87,9 @@ function aReserva(f: Fila): Reserva {
     expiraEn: f.expira_en.toISOString(),
     ...(f.pago_proveedor && f.pago_id && f.pago_fecha
       ? { pago: { proveedor: f.pago_proveedor, id: f.pago_id, fecha: f.pago_fecha.toISOString() } }
+      : {}),
+    ...(f.pago_reportado && f.pago_reportado_en
+      ? { pagoReportado: { referencia: f.pago_reportado, fecha: f.pago_reportado_en.toISOString() } }
       : {}),
     ...(f.notas ? { notas: f.notas } : {}),
   };
@@ -231,6 +238,60 @@ export async function cancelarReserva(codigo: string): Promise<boolean> {
   return filas.length > 0;
 }
 
+/** Mayúsculas, sin espacios ni guiones: así «m 123-456» y «M123456» son el mismo comprobante. */
+export function normalizarReferencia(texto: string): string {
+  return texto.toUpperCase().replace(/[\s\-.#]/g, "");
+}
+
+export type ResultadoReporte =
+  | { ok: true; reserva: Reserva }
+  | { ok: false; motivo: "no-existe" | "ya-confirmada" | "cancelada" | "referencia-invalida" | "referencia-usada" };
+
+/**
+ * El cliente dice que pagó y deja el número de comprobante. No confirma nada: solo lo guarda
+ * para que el dueño lo cruce con el movimiento real. Mientras tanto la reserva sigue apartada
+ * `horasEspera` horas más, para que no se libere antes de que alguien lo revise.
+ * Un comprobante que ya aparece en otra reserva se rechaza: es la forma más común de engaño.
+ */
+export async function reportarPago(codigo: string, referencia: string, horasEspera: number): Promise<ResultadoReporte> {
+  const ref = normalizarReferencia(referencia);
+  if (!/^[A-Z0-9]{4,40}$/.test(ref)) return { ok: false, motivo: "referencia-invalida" };
+  const sql = db();
+  return sql.begin(async (tx): Promise<ResultadoReporte> => {
+    await tx`select pg_advisory_xact_lock(${CANDADO_RESERVAS})`;
+    await tx`update reservas set estado = 'expirada' where estado = 'pendiente' and expira_en <= now()`;
+    const [r] = await tx.unsafe<Fila[]>(`select ${COLUMNAS} from reservas where codigo = $1 for update`, [codigo]);
+    if (!r) return { ok: false, motivo: "no-existe" };
+    if (r.estado === "confirmada") return { ok: false, motivo: "ya-confirmada" };
+    if (r.estado === "cancelada") return { ok: false, motivo: "cancelada" };
+
+    const [usada] = await tx`
+      select codigo from reservas
+       where codigo <> ${codigo}
+         and (pago_reportado = ${ref} or upper(regexp_replace(pago_id, '[\\s\\-.#]', '', 'g')) = ${ref})
+       limit 1`;
+    if (usada) return { ok: false, motivo: "referencia-usada" };
+
+    // Si ya había expirado no se vuelve a apartar (las noches pueden estar tomadas):
+    // queda anotada para que el dueño decida al revisar.
+    const [fila] = await tx.unsafe<Fila[]>(
+      `update reservas
+          set pago_reportado = $2,
+              pago_reportado_en = now(),
+              expira_en = case when estado = 'pendiente'
+                               then greatest(expira_en, now() + make_interval(hours => $3))
+                               else expira_en end,
+              notas = case when estado = 'expirada'
+                           then 'Reportó el pago ' || $2 || ' después de expirar: revisar si las fechas siguen libres.'
+                           else notas end
+        where codigo = $1
+      returning ${COLUMNAS}`,
+      [codigo, ref, horasEspera],
+    );
+    return { ok: true, reserva: aReserva(fila) };
+  });
+}
+
 export type FiltroReservas = {
   vista: "proximas" | "pasadas" | "todas";
   estado: EstadoReserva | "todos";
@@ -276,6 +337,7 @@ export async function buscarReservas(f: FiltroReservas): Promise<{ reservas: Res
 export type Resumen = {
   proximasConfirmadas: number;
   pendientes: number;
+  pagosReportados: number; // pendientes cuyo cliente ya escribió el comprobante
   nochesOcupadasMes: number;
   diasDelMes: number;
   ingresosMes: number; // total de reservas confirmadas que llegan este mes
@@ -288,7 +350,7 @@ export async function resumen(): Promise<Resumen> {
   const sql = db();
   const [[cifras], notas] = await Promise.all([
     sql<{
-      proximas: number; pendientes: number; noches: number; dias: number; ingresos: number; anticipos: number;
+      proximas: number; pendientes: number; reportados: number; noches: number; dias: number; ingresos: number; anticipos: number;
     }[]>`
       with mes as (
         select date_trunc('month', (now() at time zone 'America/Bogota'))::date as ini,
@@ -297,6 +359,8 @@ export async function resumen(): Promise<Resumen> {
       select
         (select count(*) from reservas where estado = 'confirmada' and salida >= current_date)::int as proximas,
         (select count(*) from reservas where estado = 'pendiente' and expira_en > now())::int as pendientes,
+        (select count(*) from reservas
+          where estado = 'pendiente' and expira_en > now() and pago_reportado is not null)::int as reportados,
         (select count(distinct d) from reservas r, mes,
            generate_series(greatest(r.entrada, mes.ini), least(r.salida, mes.fin) - 1, interval '1 day') d
           where r.estado = 'confirmada')::int as noches,
@@ -310,6 +374,7 @@ export async function resumen(): Promise<Resumen> {
   return {
     proximasConfirmadas: cifras.proximas,
     pendientes: cifras.pendientes,
+    pagosReportados: cifras.reportados,
     nochesOcupadasMes: cifras.noches,
     diasDelMes: cifras.dias,
     ingresosMes: cifras.ingresos,

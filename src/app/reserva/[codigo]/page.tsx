@@ -6,7 +6,7 @@ import { formatoLargo } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
 import { obtenerReserva } from "@/lib/store";
 import { urlDePago, wompiConfigurado } from "@/lib/wompi";
-import { Refrescar, SimularPago } from "./acciones";
+import { Refrescar, ReportarPago, SimularPago } from "./acciones";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,8 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
     `Hola, tengo la reserva ${r.codigo} en ${cfg.nombre}`,
   )}`;
   const mensajeComprobante = `Hola, adjunto el comprobante de la reserva ${r.codigo} por ${pesos(r.anticipo)}${
+    r.pagoReportado ? ` (comprobante ${r.pagoReportado.referencia})` : ""
+  }${
     cfg.requisitos ? ` y ${cfg.requisitos.charAt(0).toLowerCase()}${cfg.requisitos.slice(1).replace(/\.$/, "")}` : ""
   }.`;
 
@@ -84,36 +86,54 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
             </strong>
             . Si no se recibe el pago, quedan libres otra vez.
           </p>
-          {pago ? (
+          {pago && (
             <a href={pago} className="boton-goma block text-center rounded-full bg-teja text-white font-extrabold py-3.5">
               Pagar {pesos(r.anticipo)} con Nequi, PSE o tarjeta
             </a>
-          ) : process.env.NODE_ENV !== "production" ? (
-            <SimularPago codigo={r.codigo} />
-          ) : (
-            <div className="rounded-[24px] border-[3px] border-teja bg-white p-5 text-sm font-semibold space-y-2 shadow-[0_8px_0_var(--teja)]">
+          )}
+          {!pago && process.env.NODE_ENV !== "production" && <SimularPago codigo={r.codigo} />}
+          {!pago && (
+            <div className="rounded-[24px] border-[3px] border-teja bg-white p-5 text-sm font-semibold space-y-4 shadow-[0_8px_0_var(--teja)]">
               <p className="font-titulo text-lg font-extrabold">Separa con {pesos(r.anticipo)}</p>
-              {cfg.llaveBreB && (
+              <div className="space-y-1">
+                <p className="font-extrabold">1. Transfiere {pesos(r.anticipo)}</p>
+                {cfg.llaveBreB && (
+                  <p>
+                    <span className="text-suave">Llave Bre-B (desde Nequi o cualquier banco):</span>{" "}
+                    <strong className="select-all text-base">{cfg.llaveBreB}</strong>
+                  </p>
+                )}
+                {cfg.nequi && <p><span className="text-suave">Nequi:</span> <strong>{cfg.nequi}</strong></p>}
+                {cfg.titular && <p><span className="text-suave">A nombre de:</span> {cfg.titular}</p>}
                 <p>
-                  <span className="text-suave">Llave Bre-B (desde Nequi o cualquier banco):</span>{" "}
-                  <strong className="select-all text-base">{cfg.llaveBreB}</strong>
+                  En la descripción o mensaje del pago escribe tu código{" "}
+                  <strong className="select-all rounded bg-sol/30 px-1.5 py-0.5">{r.codigo}</strong>.
                 </p>
-              )}
-              {cfg.nequi && <p><span className="text-suave">Nequi:</span> <strong>{cfg.nequi}</strong></p>}
-              {cfg.titular && <p><span className="text-suave">A nombre de:</span> {cfg.titular}</p>}
-              <p>
-                En la descripción escribe tu código <strong>{r.codigo}</strong>. Luego envíanos por WhatsApp el comprobante
-                {cfg.requisitos && <> y {cfg.requisitos.charAt(0).toLowerCase() + cfg.requisitos.slice(1)}</>}
-                {!cfg.requisitos && "."} Confirmamos tu reserva en cuanto lo veamos.
-              </p>
-              <a
-                href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(mensajeComprobante)}`}
-                target="_blank"
-                rel="noopener"
-                className="boton-whatsapp block text-center rounded-full bg-[#25D366] text-white font-extrabold py-3"
-              >
-                Enviar comprobante por WhatsApp
-              </a>
+              </div>
+              <div className="space-y-1">
+                <p className="font-extrabold">2. Escribe aquí el número del comprobante</p>
+                {r.pagoReportado ? (
+                  <p className="rounded-[14px] bg-libre text-libre-texto p-3">
+                    ✓ Recibimos el comprobante <strong>{r.pagoReportado.referencia}</strong>. Lo verificamos con el
+                    movimiento y te confirmamos. Tus fechas siguen apartadas mientras tanto.
+                  </p>
+                ) : null}
+                <ReportarPago codigo={r.codigo} actual={r.pagoReportado?.referencia} />
+              </div>
+              <div className="space-y-2">
+                <p className="font-extrabold">
+                  3. Envíanos el comprobante{cfg.requisitos && <> y {cfg.requisitos.charAt(0).toLowerCase() + cfg.requisitos.slice(1).replace(/\.$/, "")}</>}
+                </p>
+                <a
+                  href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(mensajeComprobante)}`}
+                  target="_blank"
+                  rel="noopener"
+                  className="boton-whatsapp block text-center rounded-full bg-[#25D366] text-white font-extrabold py-3"
+                >
+                  Enviar comprobante por WhatsApp
+                </a>
+                <p className="text-xs text-suave">Confirmamos tu reserva cuando el pago aparezca en nuestra cuenta.</p>
+              </div>
             </div>
           )}
           <Refrescar />
@@ -129,10 +149,19 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
       )}
 
       {r.estado === "expirada" && (
-        <p className="mt-6 text-sm font-semibold">
-          No recibimos el pago a tiempo. Si ya pagaste, escríbenos por WhatsApp con tu código y lo revisamos.{" "}
-          <Link href="/#reservar" className="underline">Hacer una nueva reserva</Link>
-        </p>
+        <div className="mt-6 text-sm font-semibold space-y-3">
+          <p>
+            No recibimos el pago a tiempo. Si ya pagaste, escribe el número del comprobante y escríbenos por WhatsApp
+            con tu código: lo revisamos.{" "}
+            <Link href="/#reservar" className="underline">Hacer una nueva reserva</Link>
+          </p>
+          {r.pagoReportado && (
+            <p className="rounded-[14px] bg-libre text-libre-texto p-3">
+              ✓ Recibimos el comprobante <strong>{r.pagoReportado.referencia}</strong>. Lo revisamos y te escribimos.
+            </p>
+          )}
+          <ReportarPago codigo={r.codigo} actual={r.pagoReportado?.referencia} />
+        </div>
       )}
 
       <a href={whatsapp} target="_blank" rel="noopener" className="mt-8 inline-block text-sm font-bold underline text-cafe">

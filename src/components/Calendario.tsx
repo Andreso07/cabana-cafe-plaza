@@ -131,11 +131,14 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
                 const noche = tipoNoche(f, cfg);
                 const especial = noche.tipo === "especial";
 
-                let clase = "bg-white border-black/[0.06] hover:border-teja/50";
+                // Verde = libre, rojo = reservado. La selección va en teja y el rango en amarillo
+                // para no confundirse con ninguno de los dos.
+                let clase = "bg-libre border-libre-borde text-libre-texto hover:border-libre-texto";
                 if (esEntrada || esSalida) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)]";
-                else if (enRango) clase = "bg-teja/15 border-teja/25";
+                else if (enRango) clase = "bg-sol/30 border-sol";
                 else if (pasado) clase = "bg-black/[0.03] border-transparent text-black/20";
-                else if (ocupada) clase = "bg-black/[0.06] border-transparent text-black/30 line-through";
+                else if (ocupada && puedeSerSalida) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto hover:border-ocupado-texto";
+                else if (ocupada) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto line-through";
 
                 return (
                   <button
@@ -154,7 +157,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
                     {!pasado && !ocupada && (
                       <span
                         className={`text-[10px] font-bold leading-none ${
-                          esEntrada || esSalida ? "text-white/90" : especial ? "text-cafe" : "text-suave"
+                          esEntrada || esSalida ? "text-white/90" : especial ? "text-cafe-oscuro" : "opacity-75"
                         }`}
                       >
                         {precioCorto(noche.precio)}
@@ -172,8 +175,8 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
       </div>
 
       <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-suave">
-        <span className="flex items-center gap-1"><span className="size-3 rounded bg-white border border-black/10" /> Disponible</span>
-        <span className="flex items-center gap-1"><span className="size-3 rounded bg-black/10" /> Ocupado</span>
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-libre border border-libre-borde" /> Disponible</span>
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-ocupado border border-ocupado-borde" /> Reservado</span>
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-teja" /> Tu selección</span>
         <span className="flex items-center gap-1"><span className="text-teja font-semibold">15</span> Festivo</span>
         {cfg.fechasEspeciales.length > 0 && (

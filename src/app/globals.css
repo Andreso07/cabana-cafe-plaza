@@ -8,6 +8,13 @@
   --teja-oscura: #8e3318;
   --cafe: #3f6b3a;
   --cafe-oscuro: #2b4a28;
+  /* Calendario: verde = noche libre, rojo = noche reservada */
+  --libre: #e2f5dd;
+  --libre-borde: #9fd494;
+  --libre-texto: #24611b;
+  --ocupado: #fde0dc;
+  --ocupado-borde: #f0a197;
+  --ocupado-texto: #b42318;
   --sol: #f5b63f;
   --linea: #ece3d6;
 }
@@ -20,6 +27,12 @@
   --color-teja-oscura: var(--teja-oscura);
   --color-cafe: var(--cafe);
   --color-cafe-oscuro: var(--cafe-oscuro);
+  --color-libre: var(--libre);
+  --color-libre-borde: var(--libre-borde);
+  --color-libre-texto: var(--libre-texto);
+  --color-ocupado: var(--ocupado);
+  --color-ocupado-borde: var(--ocupado-borde);
+  --color-ocupado-texto: var(--ocupado-texto);
   --color-sol: var(--sol);
   --color-linea: var(--linea);
   --font-sans: var(--font-nunito);

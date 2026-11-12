@@ -1,7 +1,40 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { reportar, type EstadoReporte } from "./reportar";
+
+/** Campo donde el cliente escribe el número del comprobante de su pago. */
+export function ReportarPago({ codigo, actual }: { codigo: string; actual?: string }) {
+  const [estado, accion, enviando] = useActionState<EstadoReporte, FormData>(reportar.bind(null, codigo), {});
+  return (
+    <form action={accion} className="space-y-2">
+      <label className="block">
+        <span className="font-bold">Número del comprobante</span>
+        <span className="block text-xs text-suave">
+          Aparece en el comprobante de Nequi o de tu banco como «Referencia» o «Número de aprobación».
+        </span>
+        <input
+          name="referencia"
+          required
+          minLength={4}
+          maxLength={40}
+          defaultValue={actual}
+          autoComplete="off"
+          placeholder="Ej.: M12345678"
+          className="mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold uppercase outline-none focus:border-teja focus:bg-white"
+        />
+      </label>
+      <button
+        disabled={enviando}
+        className="w-full rounded-full bg-cafe text-white font-extrabold py-3 disabled:opacity-60"
+      >
+        {enviando ? "Enviando…" : actual ? "Corregir el número" : "Ya pagué: enviar el número"}
+      </button>
+      {estado.error && <p className="text-teja-oscura font-bold" role="alert">{estado.error}</p>}
+    </form>
+  );
+}
 
 /** Mientras la reserva esté pendiente, vuelve a consultar cada 5 s: el aviso de Wompi llega aparte. */
 export function Refrescar() {

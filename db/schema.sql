@@ -45,6 +45,13 @@ create table if not exists bloqueos (
 alter table reservas add column if not exists descuento integer not null default 0;
 alter table reservas add column if not exists descuento_nombre text;
 
+-- Número de comprobante que el cliente dice haber pagado (Nequi, Bre-B, banco), en mayúsculas
+-- y sin espacios. Sirve para cruzarlo con el movimiento real y para que un mismo comprobante
+-- no se use en dos reservas.
+alter table reservas add column if not exists pago_reportado text;
+alter table reservas add column if not exists pago_reportado_en timestamptz;
+create index if not exists reservas_pago_reportado_idx on reservas (pago_reportado) where pago_reportado is not null;
+
 -- Textos, precios, fechas especiales y descuentos que se editan desde el panel. Una sola fila.
 create table if not exists configuracion (
   id             smallint primary key default 1 check (id = 1),

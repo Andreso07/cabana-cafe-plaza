@@ -70,8 +70,8 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
           <Cifra
             titulo="Por confirmar"
             valor={String(cifras.pendientes)}
-            detalle="Esperando pago"
-            tono={cifras.pendientes > 0 ? "border-sol bg-sol/10" : ""}
+            detalle={cifras.pagosReportados > 0 ? `${cifras.pagosReportados} con comprobante por verificar` : "Esperando pago"}
+            tono={cifras.pagosReportados > 0 ? "border-teja bg-teja/5" : cifras.pendientes > 0 ? "border-sol bg-sol/10" : ""}
           />
           <Cifra
             titulo="Ocupación del mes"
@@ -126,8 +126,9 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
               {reservas.map((r) => {
                 const n = diasEntre(r.entrada, r.salida);
                 const enCasa = r.estado === "confirmada" && r.entrada <= hoy && r.salida > hoy;
+                const porVerificar = Boolean(r.pagoReportado) && (r.estado === "pendiente" || r.estado === "expirada");
                 return (
-                  <tr key={r.codigo} className="border-b border-black/5 align-top">
+                  <tr key={r.codigo} className={`border-b border-black/5 align-top ${porVerificar ? "bg-sol/10" : ""}`}>
                     <td className="py-3 px-3 font-mono text-xs">{r.codigo}</td>
                     <td className="py-3 px-3 font-semibold whitespace-nowrap">
                       {formatoLargo(r.entrada)}<br />→ {formatoLargo(r.salida)}
@@ -150,13 +151,30 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
                       <span className="block text-xs text-suave">separa {pesos(r.anticipo)}</span>
                       {r.descuento > 0 && <span className="block text-xs text-cafe">🎁 −{pesos(r.descuento)}</span>}
                       {r.pago && <span className="block text-xs text-suave">{r.pago.proveedor}: {r.pago.id}</span>}
+                      {porVerificar && r.pagoReportado && (
+                        <span className="mt-1 block rounded-lg bg-sol/30 px-2 py-1 text-xs font-bold text-[#7a4e00]">
+                          🧾 Comprobante del cliente:
+                          <span className="block font-mono text-sm select-all">{r.pagoReportado.referencia}</span>
+                          <span className="block font-semibold">
+                            {new Date(r.pagoReportado.fecha).toLocaleString("es-CO", {
+                              timeZone: "America/Bogota", day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+                            })}{" "}
+                            · búscalo en tu Nequi por {pesos(r.anticipo)}
+                          </span>
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-3"><span className={`${boton} ${ETIQUETA[r.estado]}`}>{r.estado}</span></td>
                     <td className="py-3 px-3 space-y-2 min-w-48">
                       {(r.estado === "pendiente" || r.estado === "expirada") && (
                         <form action={marcarPagada} className="flex gap-1">
                           <input type="hidden" name="codigo" value={r.codigo} />
-                          <input name="referencia" placeholder="Ref. del pago" className={`${campo} w-28 py-1 text-xs`} />
+                          <input
+                            name="referencia"
+                            placeholder="Ref. del pago"
+                            defaultValue={r.pagoReportado?.referencia}
+                            className={`${campo} w-28 py-1 text-xs`}
+                          />
                           <button className={`${boton} bg-cafe text-white`}>Pagada</button>
                         </form>
                       )}
