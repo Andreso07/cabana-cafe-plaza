@@ -22,41 +22,10 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
 
 export default async function Inicio() {
   const cfg = await leerConfig();
-  const { precios } = cfg;
 
-  // Los planes salen de los mismos precios que cobra el calendario.
-  const planes = [
-    {
-      id: "semana",
-      nombre: "Escapada entre semana",
-      icono: "🌿",
-      precio: precios.semana,
-      unidad: "/ noche",
-      incluyeAnterior: null as string | null,
-      incluye: ["Domingo a jueves", `Cabaña completa, hasta ${cfg.capacidad} personas`, "El precio más bajo de la semana"],
-      destacado: false,
-    },
-    {
-      id: "finde",
-      nombre: "Fin de semana",
-      icono: "☕",
-      precio: precios.viernes + precios.finDeSemana,
-      unidad: "/ 2 noches",
-      incluyeAnterior: "Escapada",
-      incluye: ["Llega el viernes, sal el domingo", "Viernes y sábado en la cabaña", "Ideal para pareja"],
-      destacado: true,
-    },
-    {
-      id: "puente",
-      nombre: "Puente festivo",
-      icono: "🎉",
-      precio: precios.viernes + precios.finDeSemana * 2,
-      unidad: "/ 3 noches",
-      incluyeAnterior: "Escapada",
-      incluye: ["De viernes a lunes festivo", "Tres noches para desconectarte", "Reserva con tiempo: se llena rápido"],
-      destacado: false,
-    },
-  ];
+
+  // Los planes se editan en el panel (Configuración → Planes).
+  const planes = cfg.planes;
 
   return (
     <main>
@@ -114,6 +83,9 @@ export default async function Inicio() {
               descuentos: cfg.descuentos.filter((d) => d.activo),
               capacidad: cfg.capacidad,
               horasApartado: cfg.horasApartado,
+              checkIn: cfg.checkIn,
+              checkOut: cfg.checkOut,
+              requisitos: cfg.requisitos,
             }}
           />
         </div>
@@ -188,11 +160,6 @@ export default async function Inicio() {
                   {p.icono}
                 </span>
               </div>
-              {p.incluyeAnterior && (
-                <span className="mt-4 w-fit text-[11px] font-black tracking-wide text-teja bg-teja/10 rounded-full px-3 py-1">
-                  Incluye {p.incluyeAnterior} +
-                </span>
-              )}
               <ul className="mt-4 space-y-2.5 flex-1">
                 {p.incluye.map((item) => (
                   <li key={item} className="flex gap-2 items-start text-sm font-bold leading-snug">

@@ -11,7 +11,13 @@ import { Calendario } from "./Calendario";
 type Disponibilidad = { hoy: Fecha; ocupadas: Fecha[] };
 
 /** Lo que el formulario necesita de la configuración; el servidor se lo pasa. */
-export type ConfigReserva = ConfigPrecios & { capacidad: number; horasApartado: number };
+export type ConfigReserva = ConfigPrecios & {
+  capacidad: number;
+  horasApartado: number;
+  checkIn: string;
+  checkOut: string;
+  requisitos: string;
+};
 
 const campo =
   "mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold outline-none focus:border-teja focus:bg-white";
@@ -126,10 +132,28 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
           </div>
         ) : (
           <form onSubmit={enviar} className="mt-2 flex flex-col gap-3">
-            <div className="text-sm font-semibold">
-              <p><span className="text-suave">Llegada:</span> {formatoLargo(entrada!)}</p>
-              <p><span className="text-suave">Salida:</span> {formatoLargo(salida!)}</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-[14px] bg-libre border-2 border-libre-borde px-3 py-2">
+                <p className="text-[10px] font-black tracking-widest text-libre-texto/80">LLEGADA</p>
+                <p className="font-extrabold">{formatoLargo(entrada!)}</p>
+                <p className="text-xs font-semibold text-suave">desde las {cfg.checkIn}</p>
+              </div>
+              <div className="rounded-[14px] bg-libre border-2 border-libre-borde px-3 py-2">
+                <p className="text-[10px] font-black tracking-widest text-libre-texto/80">SALIDA</p>
+                <p className="font-extrabold">{formatoLargo(salida!)}</p>
+                <p className="text-xs font-semibold text-suave">hasta las {cfg.checkOut}</p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEntrada(null);
+                setSalida(null);
+              }}
+              className="-mt-1 self-start text-xs font-bold text-suave underline"
+            >
+              Cambiar fechas
+            </button>
             <ul className="text-sm font-semibold bg-crema rounded-[16px] border-2 border-dashed border-teja/20 px-3 py-2">
               {cot.noches.map((n) => (
                 <li key={n.fecha} className="flex justify-between gap-2">
@@ -212,6 +236,12 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
                     <Link href="/condiciones" target="_blank" className="underline">condiciones de reserva y cancelación</Link>.
                   </span>
                 </label>
+                {cfg.requisitos && (
+                  <p className="rounded-[14px] bg-crema border-2 border-dashed border-black/10 px-3 py-2 text-xs font-semibold">
+                    📲 {cfg.requisitos.replace(/\.$/, "")} y el comprobante de pago los envías <strong>por WhatsApp</strong> después
+                    de reservar. Aquí no tienes que subir nada.
+                  </p>
+                )}
                 {error && <p className="text-sm text-teja-oscura" role="alert">{error}</p>}
                 <button
                   type="submit"

@@ -383,6 +383,19 @@ export async function resumen(): Promise<Resumen> {
   };
 }
 
+/** Reservas que ocupan noches (confirmadas y apartadas vigentes), del último mes en adelante. */
+export async function reservasParaCalendario(): Promise<Reserva[]> {
+  const sql = db();
+  const filas = await sql.unsafe<Fila[]>(
+    `select ${COLUMNAS} from reservas
+      where (estado = 'confirmada' or (estado = 'pendiente' and expira_en > now()))
+        and salida >= current_date - 30
+      order by entrada
+      limit 1000`,
+  );
+  return filas.map(aReserva);
+}
+
 export async function listarBloqueos(): Promise<Bloqueo[]> {
   const sql = db();
   const filas = await sql<Bloqueo[]>`

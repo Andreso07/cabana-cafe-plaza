@@ -1,6 +1,8 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { BotonConfirmar } from "@/components/BotonConfirmar";
 import { esAdmin } from "@/lib/admin";
+import { eventosExternos } from "@/lib/calendario";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
@@ -8,10 +10,13 @@ import {
   agregarDescuento,
   agregarFechaEspecial,
   alternarDescuento,
+  guardarCalendario,
   guardarListas,
+  guardarPlanes,
   guardarPrecios,
   guardarTextos,
   quitarDescuento,
+  nuevoEnlaceCalendario,
   quitarFechaEspecial,
 } from "../../acciones";
 
@@ -23,6 +28,8 @@ const guardarBtn = "boton-goma font-titulo rounded-full bg-teja text-white font-
 const NOMBRES: Record<string, string> = {
   textos: "Textos y ubicación",
   precios: "Precios y pago",
+  planes: "Planes",
+  calendario: "Google Calendar",
   listas: "Servicios y reglas",
   fechas: "Fechas especiales",
   descuentos: "Descuentos",
@@ -56,8 +63,14 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
   const sp = await searchParams;
   const ok = typeof sp.ok === "string" ? sp.ok : null;
   const error = typeof sp.error === "string" ? sp.error : null;
-  const cfg = await leerConfig();
+  const [cfg, externo] = await Promise.all([leerConfig(), eventosExternos()]);
   const hoy = hoyEnColombia();
+  const h = await headers();
+  const origen = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const enlaceIcs = cfg.calendarioToken ? `${origen}/api/calendario/${cfg.calendarioToken}.ics` : null;
+  const { semana, viernes, finDeSemana } = cfg.precios;
+  // Una tarjeta vacía al final para agregar un plan nuevo.
+  const tarjetasPlanes = [...cfg.planes, null];
 
   return (
     <main className="space-y-6">
@@ -114,6 +127,136 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           </div>
           <div className="md:col-span-3"><button className={guardarBtn}>Guardar precios y pago</button></div>
         </form>
+      </Tarjeta>
+
+      <Tarjeta
+        id="planes"
+        titulo="Planes"
+        ayuda="Las tarjetas de la sección «Planes» de la web. Son la vitrina: lo que se cobra al reservar sale del precio de cada noche, así que mantén los dos de acuerdo."
+      >
+        <p className="text-xs font-bold text-suave mb-4">
+          Con los precios por noche de hoy: 1 noche entre semana {pesos(semana)} · viernes + sábado {pesos(viernes + finDeSemana)} ·
+          viernes a lunes festivo {pesos(viernes + finDeSemana * 2)}.
+        </p>
+        <form action={guardarPlanes} className="space-y-4">
+          <input type="hidden" name="totalPlanes" value={tarjetasPlanes.length} />
+          {tarjetasPlanes.map((p, i) => (
+            <fieldset
+              key={p?.id ?? "nuevo"}
+              className={`rounded-[18px] border-2 p-4 grid gap-3 md:grid-cols-[70px_1.5fr_1fr_1fr] ${p ? "border-black/5" : "border-dashed border-teja/30"}`}
+            >
+              <legend className="px-2 text-xs font-black tracking-widest text-suave uppercase">
+                {p ? `Plan ${i + 1}` : "Agregar un plan (opcional)"}
+              </legend>
+              <input type="hidden" name={`plan-${i}-id`} value={p?.id ?? ""} />
+              <Campo nombre={`plan-${i}-icono`} titulo="Ícono" valor={p?.icono ?? ""} placeholder="🏡" />
+              <Campo nombre={`plan-${i}-nombre`} titulo="Nombre" valor={p?.nombre ?? ""} placeholder="Plan romántico" />
+              <Campo nombre={`plan-${i}-precio`} titulo="Precio" valor={p?.precio ?? ""} inputMode="numeric" placeholder="300000" />
+              <Campo nombre={`plan-${i}-unidad`} titulo="Por" valor={p?.unidad ?? ""} placeholder="/ 2 noches" />
+              <label className={`${etiqueta} md:col-span-3`}>
+                Qué incluye <span className="font-semibold text-suave">(una línea por punto, máximo 6)</span>
+                <textarea name={`plan-${i}-incluye`} rows={3} className={campo} defaultValue={p?.incluye.join("\n") ?? ""} />
+              </label>
+              <div className="flex flex-col gap-2 text-sm font-bold justify-end">
+                <label className="flex gap-2 items-center">
+                  <input type="radio" name="destacado" value={i} defaultChecked={p?.destacado} className="accent-teja" />
+                  Destacado
+                </label>
+                {p && (
+                  <label className="flex gap-2 items-center text-suave">
+                    <input type="checkbox" name={`plan-${i}-quitar`} className="accent-teja" />
+                    Quitar
+                  </label>
+                )}
+              </div>
+            </fieldset>
+          ))}
+          <button className={guardarBtn}>Guardar planes</button>
+        </form>
+      </Tarjeta>
+
+      <Tarjeta
+        id="calendario"
+        titulo="Google Calendar"
+        ayuda="Para que lo que agenda el agente de WhatsApp ocupe la web, y para ver las reservas de la web en tu Google Calendar."
+      >
+        <div className="space-y-6 text-sm font-semibold">
+          <div>
+            <h3 className="font-extrabold">1. De Google a la web</h3>
+            <p className="text-suave mt-1">
+              En Google Calendar (desde el computador): ⚙️ Configuración → en la izquierda, el calendario donde se anotan las
+              reservas → «Integrar el calendario» → copia la <strong>Dirección secreta en formato iCal</strong> y pégala aquí. Cada
+              evento de ese calendario ocupa sus noches en la web. Usa un calendario solo para la cabaña: una cita personal también
+              bloquearía fechas.
+            </p>
+            <form action={guardarCalendario} className="mt-3 flex flex-wrap gap-2 items-end">
+              <label className={`${etiqueta} grow`}>
+                Dirección secreta en formato iCal
+                <input
+                  name="googleIcalUrl"
+                  type="url"
+                  defaultValue={cfg.googleIcalUrl}
+                  placeholder="https://calendar.google.com/calendar/ical/…/private-…/basic.ics"
+                  className={`${campo} font-mono text-xs`}
+                />
+              </label>
+              <button className={guardarBtn}>Guardar</button>
+            </form>
+            {externo.configurado && (
+              <div className={`mt-3 rounded-[14px] p-3 ${externo.error ? "bg-teja/10 text-teja-oscura" : "bg-libre text-libre-texto"}`}>
+                {externo.error ? (
+                  <p>
+                    ⚠️ No se pudo leer Google Calendar: {externo.error}.
+                    {externo.leidoEn ? " Se usan los últimos eventos que se leyeron bien." : ""}
+                  </p>
+                ) : (
+                  <p>
+                    ✓ Conectado. {externo.eventos.length}{" "}
+                    {externo.eventos.length === 1 ? "evento próximo ocupa" : "eventos próximos ocupan"} noches en la web.
+                  </p>
+                )}
+                <ul className="mt-2 space-y-0.5 text-tinta">
+                  {externo.eventos.slice(0, 15).map((e, j) => (
+                    <li key={j}>
+                      📅 {formatoLargo(e.desde)} → {formatoLargo(e.hasta)} · {e.resumen}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="font-extrabold">2. De la web a Google</h3>
+            <p className="text-suave mt-1">
+              En Google Calendar: «Otros calendarios» → <strong>+</strong> → «Desde URL» → pega este enlace. Las reservas de la web
+              aparecen como un calendario aparte. Google lo vuelve a leer solo, cada varias horas: eso lo decide Google.
+            </p>
+            {enlaceIcs ? (
+              <p className="mt-2 rounded-[12px] bg-crema border-2 border-black/5 px-3 py-2 font-mono text-xs break-all select-all">
+                {enlaceIcs}
+              </p>
+            ) : (
+              <p className="mt-2 text-suave">Aún no hay enlace. Créalo con el botón.</p>
+            )}
+            <p className="mt-1 text-xs text-teja-oscura">
+              Quien tenga este enlace ve nombres y teléfonos de tus huéspedes: no lo compartas. Si se filtra, crea uno nuevo y el
+              anterior deja de funcionar.
+            </p>
+            <form action={nuevoEnlaceCalendario} className="mt-2">
+              {enlaceIcs ? (
+                <BotonConfirmar
+                  pregunta="¿Crear un enlace nuevo? El que pegaste en Google dejará de funcionar y tendrás que pegar el nuevo."
+                  className="rounded-full border-2 border-black/10 px-4 py-2 text-xs font-extrabold"
+                >
+                  Crear enlace nuevo
+                </BotonConfirmar>
+              ) : (
+                <button className={guardarBtn}>Crear enlace</button>
+              )}
+            </form>
+          </div>
+        </div>
       </Tarjeta>
 
       <Tarjeta id="fechas" titulo="Fechas especiales" ayuda="Fechas con un precio propio por noche: Carnaval de Negros y Blancos, temporada de fin de año, eventos. Tienen prioridad sobre los precios normales.">

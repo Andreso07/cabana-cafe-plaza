@@ -3,6 +3,7 @@ import { LIMITES } from "@/config/cabana";
 import { leerConfig } from "@/lib/config";
 import { diasEntre, esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { cotizar } from "@/lib/precios";
+import { eventosExternos, nochesDe } from "@/lib/calendario";
 import { crearReserva, FechasNoDisponibles } from "@/lib/store";
 import { wompiConfigurado } from "@/lib/wompi";
 
@@ -55,6 +56,15 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: `La estadía mínima es de ${cot.minNoches} noches` },
       { status: 400 },
+    );
+  }
+
+  // Lo que el agente de WhatsApp anotó en Google Calendar también ocupa la noche.
+  const externas = nochesDe((await eventosExternos()).eventos);
+  if (cot.noches.some((n) => externas.has(n.fecha))) {
+    return NextResponse.json(
+      { error: "Alguien acaba de reservar esas fechas. Elige otras, por favor." },
+      { status: 409 },
     );
   }
 

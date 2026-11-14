@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { Descuento, Servicio } from "@/config/cabana";
+import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { cerrarSesion, claveCorrecta, esAdmin, iniciarSesion } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida } from "@/lib/fechas";
@@ -177,6 +177,59 @@ export async function guardarListas(form: FormData) {
 }
 
 const nuevoId = () => randomBytes(4).toString("hex");
+
+/**
+ * Guarda todos los planes de una vez. El formulario manda `plan-N-campo` por cada tarjeta,
+ * más una tarjeta vacía al final: si se le escribe un nombre, se agrega como plan nuevo.
+ */
+export async function guardarPlanes(form: FormData) {
+  await guardar("planes", async () => {
+    const total = Math.min(12, Number(form.get("totalPlanes")) || 0);
+    const destacado = texto(form, "destacado", 4);
+    const planes: Plan[] = [];
+    for (let i = 0; i < total; i++) {
+      const k = (c: string) => `plan-${i}-${c}`;
+      const nombre = texto(form, k("nombre"), 40);
+      if (!nombre || form.get(k("quitar")) === "on") continue;
+      planes.push({
+        id: texto(form, k("id"), 20) || nuevoId(),
+        icono: texto(form, k("icono"), 8) || "🏡",
+        nombre,
+        precio: numero(form, k("precio"), `Precio de «${nombre}»`, 10_000, 50_000_000),
+        unidad: texto(form, k("unidad"), 20) || "/ noche",
+        incluye: lineas(form, k("incluye")).slice(0, 6).map((l) => l.slice(0, 70)),
+        destacado: destacado === String(i),
+      });
+    }
+    if (planes.length === 0) throw new Invalido("Planes: deja al menos uno");
+    return { planes };
+  });
+}
+
+/** Dirección secreta iCal de Google: lo que el cliente de WhatsApp reserve allí ocupa la web. */
+export async function guardarCalendario(form: FormData) {
+  await guardar("calendario", async () => {
+    const url = texto(form, "googleIcalUrl", 600);
+    if (url) {
+      let u: URL;
+      try {
+        u = new URL(url);
+      } catch {
+        throw new Invalido("Google Calendar: la dirección no es un enlace válido");
+      }
+      // Solo Google: el servidor descarga esta dirección, y no debe poder apuntarse a otra cosa.
+      if (u.protocol !== "https:" || u.hostname !== "calendar.google.com" || !u.pathname.endsWith(".ics")) {
+        throw new Invalido("Google Calendar: pega la «Dirección secreta en formato iCal» (empieza por https://calendar.google.com y termina en .ics)");
+      }
+    }
+    return { googleIcalUrl: url };
+  });
+}
+
+/** Crea (o cambia) la clave del enlace de exportación. El enlace anterior deja de funcionar. */
+export async function nuevoEnlaceCalendario() {
+  await guardar("calendario", async () => ({ calendarioToken: randomBytes(18).toString("base64url") }));
+}
 
 export async function agregarFechaEspecial(form: FormData) {
   await guardar("fechas", async () => {

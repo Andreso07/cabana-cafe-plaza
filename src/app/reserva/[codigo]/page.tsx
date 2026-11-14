@@ -29,10 +29,11 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
         })
       : null;
 
+  const fechas = `del ${formatoLargo(r.entrada)} al ${formatoLargo(r.salida)}`;
   const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
-    `Hola, tengo la reserva ${r.codigo} en ${cfg.nombre}`,
+    `Hola, tengo la reserva ${r.codigo} en ${cfg.nombre}, ${fechas}, a nombre de ${r.nombre}.`,
   )}`;
-  const mensajeComprobante = `Hola, adjunto el comprobante de la reserva ${r.codigo} por ${pesos(r.anticipo)}${
+  const mensajeComprobante = `Hola, soy ${r.nombre}. Te envío el comprobante de la reserva ${r.codigo} (${fechas}, ${r.huespedes} personas) por ${pesos(r.anticipo)}${
     r.pagoReportado ? ` (comprobante ${r.pagoReportado.referencia})` : ""
   }${
     cfg.requisitos ? ` y ${cfg.requisitos.charAt(0).toLowerCase()}${cfg.requisitos.slice(1).replace(/\.$/, "")}` : ""
@@ -123,6 +124,10 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
               <div className="space-y-2">
                 <p className="font-extrabold">
                   3. Envíanos el comprobante{cfg.requisitos && <> y {cfg.requisitos.charAt(0).toLowerCase() + cfg.requisitos.slice(1).replace(/\.$/, "")}</>}
+                </p>
+                <p className="text-xs text-suave">
+                  El botón abre WhatsApp con el mensaje listo. <strong>Adjunta allí</strong> las fotos con el clip 📎 antes de
+                  enviarlo; en esta página no se sube nada.
                 </p>
                 <a
                   href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(mensajeComprobante)}`}

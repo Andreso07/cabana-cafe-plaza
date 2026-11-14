@@ -24,6 +24,17 @@ export type Descuento = {
   | { tipo: "fechas"; desde: string; hasta: string } // llegadas dentro de un rango
 );
 
+/** Tarjeta de la sección «Planes». Es publicidad: lo que se cobra sale del precio de cada noche. */
+export type Plan = {
+  id: string;
+  icono: string;
+  nombre: string;
+  precio: number;
+  unidad: string; // «/ noche», «/ 2 noches»
+  incluye: string[];
+  destacado: boolean;
+};
+
 export type Config = {
   negocio: string;
   nombre: string;
@@ -65,6 +76,13 @@ export type Config = {
   cancelacion: string[];
   fechasEspeciales: FechaEspecial[];
   descuentos: Descuento[];
+  planes: Plan[];
+
+  // Google Calendar. La dirección secreta iCal del calendario donde se anotan las reservas
+  // de WhatsApp: sus eventos ocupan noches en la web. Y la clave del enlace que Google lee
+  // para ver las reservas de la web. Ninguna de las dos se muestra fuera del panel.
+  googleIcalUrl: string;
+  calendarioToken: string;
 };
 
 export const CONFIG_INICIAL: Config = {
@@ -121,4 +139,35 @@ export const CONFIG_INICIAL: Config = {
   ],
   fechasEspeciales: [],
   descuentos: [],
+  planes: [
+    {
+      id: "semana",
+      icono: "🌿",
+      nombre: "Escapada entre semana",
+      precio: 150000,
+      unidad: "/ noche",
+      incluye: ["Domingo a jueves", "Cabaña completa, hasta 6 personas", "El precio más bajo de la semana"],
+      destacado: false,
+    },
+    {
+      id: "finde",
+      icono: "☕",
+      nombre: "Fin de semana",
+      precio: 450000,
+      unidad: "/ 2 noches",
+      incluye: ["Llega el viernes, sal el domingo", "Viernes y sábado en la cabaña", "Ideal para pareja"],
+      destacado: true,
+    },
+    {
+      id: "puente",
+      icono: "🎉",
+      nombre: "Puente festivo",
+      precio: 700000,
+      unidad: "/ 3 noches",
+      incluye: ["De viernes a lunes festivo", "Tres noches para desconectarte", "Reserva con tiempo: se llena rápido"],
+      destacado: false,
+    },
+  ],
+  googleIcalUrl: "",
+  calendarioToken: "",
 };
