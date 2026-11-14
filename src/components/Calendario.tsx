@@ -32,9 +32,6 @@ function diasDelMes(anio: number, mes: number): (Fecha | null)[] {
   ];
 }
 
-function precioCorto(v: number) {
-  return `${Math.round(v / 1000)}k`;
-}
 
 export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onCambio }: Props) {
   const [desplazamiento, setDesplazamiento] = useState(0);
@@ -154,15 +151,6 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
                     <span className={festivo && !esEntrada && !esSalida ? "text-teja font-semibold" : ""}>
                       {Number(f.slice(8))}
                     </span>
-                    {!pasado && !ocupada && (
-                      <span
-                        className={`text-[10px] font-bold leading-none ${
-                          esEntrada || esSalida ? "text-white/90" : especial ? "text-cafe-oscuro" : "opacity-75"
-                        }`}
-                      >
-                        {precioCorto(noche.precio)}
-                      </span>
-                    )}
                     {especial && !pasado && !ocupada && !esEntrada && !esSalida && (
                       <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-sol" aria-hidden />
                     )}
@@ -181,9 +169,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
         <span className="flex items-center gap-1"><span className="text-teja font-semibold">15</span> Festivo</span>
         {cfg.fechasEspeciales.length > 0 && (
           <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sol" /> Fecha especial</span>
-        )}
-        <span>Precio por noche en miles de pesos</span>
-      </div>
+        )}      </div>
       {aviso && <p className="mt-2 text-sm text-teja-oscura" role="alert">{aviso}</p>}
     </div>
   );
