@@ -1,6 +1,7 @@
 // Solo para probar en local sin llaves de Wompi. En producción no existe.
 import { NextResponse } from "next/server";
 import { confirmarPago, obtenerReserva } from "@/lib/store";
+import { sincronizarDespues } from "@/lib/googleCalendar";
 import { wompiConfigurado } from "@/lib/wompi";
 
 export async function POST(_req: Request, ctx: { params: Promise<{ codigo: string }> }) {
@@ -10,6 +11,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ codigo: strin
   const { codigo } = await ctx.params;
   const reserva = await obtenerReserva(codigo);
   if (!reserva) return NextResponse.json({ error: "No existe" }, { status: 404 });
+  sincronizarDespues();
   const r = await confirmarPago(codigo, reserva.anticipo, {
     proveedor: "simulado",
     id: `SIM-${Date.now()}`,

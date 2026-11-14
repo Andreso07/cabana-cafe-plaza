@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { eventoAutentico, type EventoWompi } from "@/lib/wompi";
 import { confirmarPago } from "@/lib/store";
+import { sincronizarDespues } from "@/lib/googleCalendar";
 
 export async function POST(req: Request) {
   const secreto = process.env.WOMPI_EVENTS_SECRET;
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
   // Solo un pago aprobado confirma. DECLINED, VOIDED o ERROR dejan la reserva
   // pendiente hasta que expire, y el cliente puede volver a intentar.
   if (tx.status !== "APPROVED") return NextResponse.json({ ok: true });
+
+  sincronizarDespues();
 
   const r = await confirmarPago(tx.reference, tx.amount_in_cents / 100, {
     proveedor: "wompi",

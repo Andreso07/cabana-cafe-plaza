@@ -4,6 +4,7 @@ import { leerConfig } from "@/lib/config";
 import { diasEntre, esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { cotizar } from "@/lib/precios";
 import { eventosExternos, nochesDe } from "@/lib/calendario";
+import { sincronizarDespues } from "@/lib/googleCalendar";
 import { crearReserva, FechasNoDisponibles } from "@/lib/store";
 import { wompiConfigurado } from "@/lib/wompi";
 
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
       },
       wompiConfigurado() ? LIMITES.minutosApartadoWompi : cfg.horasApartado * 60,
     );
+    sincronizarDespues();
     return NextResponse.json({ codigo: reserva.codigo }, { status: 201 });
   } catch (e) {
     if (e instanceof FechasNoDisponibles) {

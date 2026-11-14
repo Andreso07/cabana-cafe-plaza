@@ -7,6 +7,7 @@ import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { cerrarSesion, claveCorrecta, esAdmin, iniciarSesion } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida } from "@/lib/fechas";
+import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
   cancelarReserva,
   confirmarPago,
@@ -82,12 +83,14 @@ export async function marcarPagada(form: FormData) {
     id: texto(form, "referencia", 60) || "sin referencia",
     fecha: new Date().toISOString(),
   });
+  sincronizarDespues();
   revalidatePath("/admin");
 }
 
 export async function cancelar(form: FormData) {
   await exigirAdmin();
   await cancelarReserva(texto(form, "codigo", 20));
+  sincronizarDespues();
   revalidatePath("/admin");
 }
 
@@ -97,12 +100,14 @@ export async function bloquear(form: FormData) {
   const hasta = texto(form, "hasta", 10) || desde;
   if (!esFechaValida(desde) || !esFechaValida(hasta) || hasta < desde) return;
   await crearBloqueo(desde, hasta, texto(form, "motivo", 80) || "Bloqueado");
+  sincronizarDespues();
   revalidatePath("/admin");
 }
 
 export async function desbloquear(form: FormData) {
   await exigirAdmin();
   await quitarBloqueo(texto(form, "id", 20));
+  sincronizarDespues();
   revalidatePath("/admin");
 }
 
@@ -224,6 +229,14 @@ export async function guardarCalendario(form: FormData) {
     }
     return { googleIcalUrl: url };
   });
+}
+
+/** Pasa ya las reservas y bloqueos a Google Calendar y cuenta lo que hizo. */
+export async function sincronizarAhora() {
+  await exigirAdmin();
+  const r = await sincronizarGoogle();
+  if (!r.ok) redirect(`${CONFIG}?error=${encodeURIComponent(`Google Calendar: ${r.error}`)}#calendario`);
+  redirect(`${CONFIG}?ok=calendario&sync=${r.creados}-${r.actualizados}-${r.borrados}#calendario`);
 }
 
 /** Crea (o cambia) la clave del enlace de exportación. El enlace anterior deja de funcionar. */

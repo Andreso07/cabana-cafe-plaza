@@ -60,7 +60,9 @@ export function leerIcs(ics: string): EventoExterno[] {
         !ini ||
         ev.STATUS === "CANCELLED" ||
         ev.TRANSP === "TRANSPARENT" ||
-        (ev.UID ?? "").endsWith(`@${DOMINIO_UID}`);
+        (ev.UID ?? "").endsWith(`@${DOMINIO_UID}`) ||
+        // Los que la web escribe con la API de Google (ver googleCalendar.ts): ya están en la web.
+        /^cabana[01][0-9a-f]+@google\.com$/.test(ev.UID ?? "");
       if (!ignorar && ini) {
         let hasta = fin?.fecha ?? sumarDias(ini.fecha, 1);
         if (hasta <= ini.fecha) hasta = sumarDias(ini.fecha, 1);

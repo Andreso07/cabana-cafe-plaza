@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { BotonConfirmar } from "@/components/BotonConfirmar";
 import { esAdmin } from "@/lib/admin";
 import { eventosExternos } from "@/lib/calendario";
+import { googleConfigurado } from "@/lib/googleCalendar";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
@@ -18,6 +19,7 @@ import {
   quitarDescuento,
   nuevoEnlaceCalendario,
   quitarFechaEspecial,
+  sincronizarAhora,
 } from "../../acciones";
 
 const campo =
@@ -63,6 +65,7 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
   const sp = await searchParams;
   const ok = typeof sp.ok === "string" ? sp.ok : null;
   const error = typeof sp.error === "string" ? sp.error : null;
+  const sync = typeof sp.sync === "string" && /^\d+-\d+-\d+$/.test(sp.sync) ? sp.sync.split("-") : null;
   const [cfg, externo] = await Promise.all([leerConfig(), eventosExternos()]);
   const hoy = hoyEnColombia();
   const h = await headers();
@@ -227,10 +230,37 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           </div>
 
           <div>
-            <h3 className="font-extrabold">2. De la web a Google</h3>
+            <h3 className="font-extrabold">2. De la web a Google, al instante</h3>
+            {googleConfigurado() ? (
+              <>
+                <p className="text-suave mt-1">
+                  Conexión directa activa: cada reserva, pago, cancelación o bloqueo de la web se escribe en tu calendario de la
+                  cabaña en segundos (✅ verde = pagada, ⏳ amarillo = apartada sin pago, 🔒 gris = bloqueada). Las que expiran sin
+                  pago se quitan solas en los minutos siguientes. No edites esos eventos en Google: se corrigen desde aquí.
+                </p>
+                {sync && (
+                  <p className="mt-2 rounded-[14px] bg-libre text-libre-texto p-3">
+                    ✓ Sincronizado: {sync[0]} creados, {sync[1]} actualizados, {sync[2]} borrados.
+                  </p>
+                )}
+                <form action={sincronizarAhora} className="mt-2">
+                  <button className="rounded-full border-2 border-black/10 px-4 py-2 text-xs font-extrabold">Sincronizar ahora</button>
+                </form>
+              </>
+            ) : (
+              <p className="text-suave mt-1">
+                No configurada. Faltan las variables GOOGLE_SERVICE_ACCOUNT_JSON y GOOGLE_CALENDAR_ID en Vercel. Mientras tanto
+                puedes usar el enlace de respaldo de abajo.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="font-extrabold">3. Respaldo: enlace iCal de la web</h3>
             <p className="text-suave mt-1">
-              En Google Calendar: «Otros calendarios» → <strong>+</strong> → «Desde URL» → pega este enlace. Las reservas de la web
-              aparecen como un calendario aparte. Google lo vuelve a leer solo, cada varias horas: eso lo decide Google.
+              {googleConfigurado()
+                ? "Con la conexión directa activa no lo necesitas: si lo agregas en Google verías cada reserva repetida. Sirve solo si algún día quitas la conexión directa."
+                : "En Google Calendar: «Otros calendarios» → + → «Desde URL» → pega este enlace. Las reservas de la web aparecen como un calendario aparte. Google lo vuelve a leer solo, cada varias horas: eso lo decide Google."}
             </p>
             {enlaceIcs ? (
               <p className="mt-2 rounded-[12px] bg-crema border-2 border-black/5 px-3 py-2 font-mono text-xs break-all select-all">
