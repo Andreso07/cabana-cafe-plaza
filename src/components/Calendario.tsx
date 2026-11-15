@@ -18,6 +18,7 @@ type Props = {
   entrada: Fecha | null;
   salida: Fecha | null;
   cfg: ConfigPrecios;
+  foco?: { fecha: Fecha; vez: number } | null;
   onCambio: (entrada: Fecha | null, salida: Fecha | null) => void;
 };
 
@@ -33,9 +34,20 @@ function diasDelMes(anio: number, mes: number): (Fecha | null)[] {
 }
 
 
-export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onCambio }: Props) {
+export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foco, onCambio }: Props) {
   const [desplazamiento, setDesplazamiento] = useState(0);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  // Cuando un plan elige fechas (`foco` cambia), el calendario abre en el mes de la llegada.
+  // Se ajusta durante el render, no en un efecto. Un clic del cliente no mueve el calendario.
+  const [focoVisto, setFocoVisto] = useState(foco?.vez ?? 0);
+  if (foco && foco.vez !== focoVisto) {
+    setFocoVisto(foco.vez);
+    const a = aDate(hoy);
+    const b = aDate(foco.fecha);
+    const meses = (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + b.getUTCMonth() - a.getUTCMonth();
+    setDesplazamiento(Math.max(0, Math.min(11, meses)));
+  }
 
   const meses = useMemo(() => {
     const base = aDate(hoy);

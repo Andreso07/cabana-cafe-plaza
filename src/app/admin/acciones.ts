@@ -7,6 +7,7 @@ import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { cerrarSesion, claveCorrecta, esAdmin, iniciarSesion } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida } from "@/lib/fechas";
+import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
 import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
   cancelarReserva,
@@ -216,6 +217,7 @@ export async function guardarPlanes(form: FormData) {
         unidad: texto(form, k("unidad"), 20) || "/ noche",
         incluye: lineas(form, k("incluye")).slice(0, 6).map((l) => l.slice(0, 70)),
         destacado: destacado === String(i),
+        sugerir: esSugerencia(form.get(k("sugerir"))) ? (form.get(k("sugerir")) as Sugerencia) : "ninguno",
       });
     }
     if (planes.length === 0) throw new Invalido("Planes: deja al menos uno");

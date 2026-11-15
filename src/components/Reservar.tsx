@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { LIMITES } from "@/config/cabana";
-import { formatoLargo, sumarDias, type Fecha } from "@/lib/fechas";
+import { formatoLargo, sumarDias } from "@/lib/fechas";
 import { cotizar, pesos, type ConfigPrecios } from "@/lib/precios";
 import { Calendario } from "./Calendario";
-
-type Disponibilidad = { hoy: Fecha; ocupadas: Fecha[] };
+import { useReserva } from "./EstadoReserva";
 
 /** Lo que el formulario necesita de la configuración; el servidor se lo pasa. */
 export type ConfigReserva = ConfigPrecios & {
@@ -24,30 +23,12 @@ const campo =
 
 export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigReserva }) {
   const router = useRouter();
-  const [disp, setDisp] = useState<Disponibilidad | null>(null);
-  const [errorCarga, setErrorCarga] = useState(false);
-  const [entrada, setEntrada] = useState<Fecha | null>(null);
-  const [salida, setSalida] = useState<Fecha | null>(null);
+  // Disponibilidad y fechas elegidas viven en <ProveedorReserva>: los planes también las usan.
+  const { disp, ocupadas, errorCarga, cargar, entrada, salida, elegir, foco } = useReserva();
   const [huespedes, setHuespedes] = useState(2);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function cargar() {
-    try {
-      const r = await fetch("/api/disponibilidad", { cache: "no-store" });
-      if (!r.ok) throw new Error(String(r.status));
-      setDisp(await r.json());
-      setErrorCarga(false);
-    } catch {
-      setErrorCarga(true);
-    }
-  }
-
-  useEffect(() => {
-    void cargar();
-  }, []);
-
-  const ocupadas = useMemo(() => new Set(disp?.ocupadas ?? []), [disp]);
   const cot = entrada && salida ? cotizar(entrada, salida, cfg, huespedes) : null;
   const muyCorta = cot ? cot.noches.length < cot.minNoches : false;
   const desde = Math.min(cfg.precios.semana, cfg.precios.viernes, cfg.precios.finDeSemana);
@@ -78,8 +59,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
       if (!r.ok) {
         setError(json.error ?? "No se pudo crear la reserva. Intenta de nuevo.");
         if (r.status === 409) {
-          setEntrada(null);
-          setSalida(null);
+          elegir(null, null);
           void cargar();
         }
         return;
@@ -112,9 +92,9 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
           cfg={cfg}
           entrada={entrada}
           salida={salida}
+          foco={foco}
           onCambio={(a, b) => {
-            setEntrada(a);
-            setSalida(b);
+            elegir(a, b);
             setError(null);
           }}
         />
@@ -147,10 +127,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
             </div>
             <button
               type="button"
-              onClick={() => {
-                setEntrada(null);
-                setSalida(null);
-              }}
+              onClick={() => elegir(null, null)}
               className="-mt-1 self-start text-xs font-bold text-suave underline"
             >
               Cambiar fechas

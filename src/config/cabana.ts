@@ -40,6 +40,8 @@ export type Plan = {
   unidad: string; // «/ noche», «/ 2 noches»
   incluye: string[];
   destacado: boolean;
+  // Qué fechas deja marcadas su botón: la próxima estadía libre de ese tipo (ver lib/sugerencias).
+  sugerir?: "ninguno" | "martes" | "viernes" | "sabado" | "domingo" | "puente" | "festivo";
 };
 
 export type Config = {
@@ -164,6 +166,7 @@ export const CONFIG_INICIAL: Config = {
   planes: [
     {
       id: "semana",
+      sugerir: "martes",
       icono: "🌿",
       nombre: "Escapada entre semana",
       precio: 150000,
@@ -173,6 +176,7 @@ export const CONFIG_INICIAL: Config = {
     },
     {
       id: "finde",
+      sugerir: "viernes",
       icono: "☕",
       nombre: "Fin de semana",
       precio: 450000,
@@ -182,6 +186,7 @@ export const CONFIG_INICIAL: Config = {
     },
     {
       id: "puente",
+      sugerir: "puente",
       icono: "🎉",
       nombre: "Puente festivo",
       precio: 700000,

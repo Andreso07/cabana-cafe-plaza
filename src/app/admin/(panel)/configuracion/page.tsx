@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { BotonConfirmar } from "@/components/BotonConfirmar";
 import { esAdmin } from "@/lib/admin";
 import { eventosExternos } from "@/lib/calendario";
+import { SUGERENCIAS, sugerenciaDe } from "@/lib/sugerencias";
 import { googleConfigurado } from "@/lib/googleCalendar";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
@@ -192,6 +193,14 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
               <Campo nombre={`plan-${i}-nombre`} titulo="Nombre" valor={p?.nombre ?? ""} placeholder="Plan romántico" />
               <Campo nombre={`plan-${i}-precio`} titulo="Precio" valor={p?.precio ?? ""} inputMode="numeric" placeholder="300000" />
               <Campo nombre={`plan-${i}-unidad`} titulo="Por" valor={p?.unidad ?? ""} placeholder="/ 2 noches" />
+              <label className={`${etiqueta} md:col-span-4`}>
+                Al pulsar su botón, marcar en el calendario el próximo…
+                <select name={`plan-${i}-sugerir`} defaultValue={p ? sugerenciaDe(p) : "ninguno"} className={campo}>
+                  {Object.entries(SUGERENCIAS).map(([v, t]) => (
+                    <option key={v} value={v}>{t}</option>
+                  ))}
+                </select>
+              </label>
               <label className={`${etiqueta} md:col-span-3`}>
                 Qué incluye <span className="font-semibold text-suave">(una línea por punto, máximo 6)</span>
                 <textarea name={`plan-${i}-incluye`} rows={3} className={campo} defaultValue={p?.incluye.join("\n") ?? ""} />

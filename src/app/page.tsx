@@ -1,7 +1,10 @@
 import Image from "next/image";
+import { BotonPlan } from "@/components/BotonPlan";
+import { ProveedorReserva } from "@/components/EstadoReserva";
 import { Reservar } from "@/components/Reservar";
 import { leerConfig } from "@/lib/config";
 import { pesos } from "@/lib/precios";
+import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
 
 // Lee precios y textos de la base en cada visita: un cambio en el panel se ve al instante.
@@ -58,77 +61,14 @@ export default async function Inicio() {
         </div>
       </section>
 
-      {/* Calendario y formulario */}
-      <section id="reservar" className="relative scroll-mt-20 fondo-puntos">
-        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-10 md:py-16">
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-            <div>
-              <Etiqueta>📅 Reserva en 2 minutos</Etiqueta>
-              <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Aparta tus fechas</h2>
-              <p className="mt-2 text-sm font-bold text-suave">
-                Elige llegada y salida, déjanos tus datos y paga el {cfg.porcentajeAnticipo}% para confirmar.
-              </p>
-            </div>
-            <span className="flex items-center gap-2 text-[11px] font-extrabold bg-white border border-black/5 rounded-full px-3 py-2">
-              <span className="size-2 rounded-full bg-cafe animate-pulse" /> Disponibilidad en tiempo real
-            </span>
-          </div>
-          <Reservar
-            conWompi={wompiConfigurado()}
-            cfg={{
-              precios: cfg.precios,
-              preciosGrupo: cfg.preciosGrupo,
-              personasPrecioBase: cfg.personasPrecioBase,
-              nochesCerradas: cfg.nochesCerradas,
-              porcentajeAnticipo: cfg.porcentajeAnticipo,
-              minNoches: cfg.minNoches,
-              fechasEspeciales: cfg.fechasEspeciales,
-              descuentos: cfg.descuentos.filter((d) => d.activo),
-              capacidad: cfg.capacidad,
-              horasApartado: cfg.horasApartado,
-              checkIn: cfg.checkIn,
-              checkOut: cfg.checkOut,
-              requisitos: cfg.requisitos,
-            }}
-          />
-        </div>
-      </section>
-
-      {/* Servicios */}
-      <section id="servicios" className="bg-white border-y-[3px] border-cafe/10">
-        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
-          <div className="text-center max-w-[640px] mx-auto">
-            <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
-            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Todo para descansar</h2>
-          </div>
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
-            {cfg.servicios.map((s) => (
-              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
-                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
-                  {s.icono}
-                </span>
-                <span className="leading-tight min-w-0">
-                  <span className="block font-extrabold text-sm">{s.titulo}</span>
-                  <span className="block text-xs font-bold text-suave">{s.detalle}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-          {cfg.noIncluye.length > 0 && (
-            <p className="mt-6 text-center text-sm font-bold text-suave">
-              No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.
-            </p>
-          )}
-        </div>
-      </section>
-
+      <ProveedorReserva>
       {/* Planes */}
       <section id="planes" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
         <div className="text-center max-w-[640px] mx-auto">
           <Etiqueta tono="suave">🌿 Nuestros planes</Etiqueta>
           <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Elige tu escapada</h2>
           <p className="mt-3 text-sm md:text-[15px] font-bold text-suave">
-            Precios por la cabaña completa, no por persona. El total exacto lo ves en el calendario.
+            Precios por la cabaña completa, no por persona. Pulsa un plan y te marcamos las próximas fechas libres en el calendario.
           </p>
         </div>
 
@@ -171,14 +111,11 @@ export default async function Inicio() {
                   </li>
                 ))}
               </ul>
-              <a
-                href="#reservar"
-                className={`mt-6 block text-center rounded-full py-3 font-extrabold text-sm border-2 ${
-                  p.destacado ? "boton-goma bg-teja text-white border-teja" : "bg-crema border-black/5 text-tinta/70 hover:border-teja/40"
-                }`}
-              >
-                Ver fechas disponibles
-              </a>
+              <BotonPlan
+                sugerir={sugerenciaDe(p)}
+                destacado={p.destacado}
+                cfg={{ nochesCerradas: cfg.nochesCerradas, minNoches: cfg.minNoches }}
+              />
             </div>
           ))}
         </div>
@@ -194,6 +131,72 @@ export default async function Inicio() {
                 🎁 {d.nombre}: −{d.porcentaje}%
               </span>
             ))}
+        </div>
+      </section>
+
+      {/* Calendario y formulario */}
+      <section id="reservar" className="relative scroll-mt-20 fondo-puntos">
+        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-10 md:py-16">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+            <div>
+              <Etiqueta>📅 Reserva en 2 minutos</Etiqueta>
+              <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Aparta tus fechas</h2>
+              <p className="mt-2 text-sm font-bold text-suave">
+                Elige llegada y salida, déjanos tus datos y paga el {cfg.porcentajeAnticipo}% para confirmar.
+              </p>
+            </div>
+            <span className="flex items-center gap-2 text-[11px] font-extrabold bg-white border border-black/5 rounded-full px-3 py-2">
+              <span className="size-2 rounded-full bg-cafe animate-pulse" /> Disponibilidad en tiempo real
+            </span>
+          </div>
+          <Reservar
+            conWompi={wompiConfigurado()}
+            cfg={{
+              precios: cfg.precios,
+              preciosGrupo: cfg.preciosGrupo,
+              personasPrecioBase: cfg.personasPrecioBase,
+              nochesCerradas: cfg.nochesCerradas,
+              porcentajeAnticipo: cfg.porcentajeAnticipo,
+              minNoches: cfg.minNoches,
+              fechasEspeciales: cfg.fechasEspeciales,
+              descuentos: cfg.descuentos.filter((d) => d.activo),
+              capacidad: cfg.capacidad,
+              horasApartado: cfg.horasApartado,
+              checkIn: cfg.checkIn,
+              checkOut: cfg.checkOut,
+              requisitos: cfg.requisitos,
+            }}
+          />
+        </div>
+      </section>
+
+      </ProveedorReserva>
+
+      {/* Servicios */}
+      <section id="servicios" className="bg-white border-y-[3px] border-cafe/10">
+        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+          <div className="text-center max-w-[640px] mx-auto">
+            <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
+            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Todo para descansar</h2>
+          </div>
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
+            {cfg.servicios.map((s) => (
+              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
+                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
+                  {s.icono}
+                </span>
+                <span className="leading-tight min-w-0">
+                  <span className="block font-extrabold text-sm">{s.titulo}</span>
+                  <span className="block text-xs font-bold text-suave">{s.detalle}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          {cfg.noIncluye.length > 0 && (
+            <p className="mt-6 text-center text-sm font-bold text-suave">
+              No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.
+            </p>
+          )}
         </div>
       </section>
 
