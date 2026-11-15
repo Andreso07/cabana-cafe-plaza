@@ -383,15 +383,16 @@ export async function resumen(): Promise<Resumen> {
   };
 }
 
-/** Reservas activas (confirmadas y apartadas vigentes) cuya llegada es ese día. */
-export async function reservasQueLlegan(fecha: Fecha): Promise<Reserva[]> {
+/** Reservas activas (confirmadas y apartadas vigentes) que llegan entre `desde` y `hasta`, ambos incluidos. */
+export async function reservasQueLlegan(desde: Fecha, hasta: Fecha): Promise<Reserva[]> {
   const sql = db();
   const filas = await sql.unsafe<Fila[]>(
     `select ${COLUMNAS} from reservas
-      where entrada = $1
+      where entrada between $1 and $2
         and (estado = 'confirmada' or (estado = 'pendiente' and expira_en > now()))
-      order by creada_en`,
-    [fecha],
+      order by entrada, creada_en
+      limit 100`,
+    [desde, hasta],
   );
   return filas.map(aReserva);
 }

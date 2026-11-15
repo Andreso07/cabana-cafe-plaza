@@ -29,6 +29,7 @@ const VISTAS = { proximas: "Próximas", pasadas: "Pasadas", todas: "Todas" } as 
 const ESTADOS = ["todos", "pendiente", "confirmada", "expirada", "cancelada"] as const;
 
 const boton = "rounded-full px-3 py-1 text-xs font-extrabold";
+const DIAS_LLEGADAS = 7; // hoy y los 6 siguientes
 const campo = "rounded-[12px] border-2 border-black/[0.06] bg-white px-3 py-2 text-sm font-semibold";
 
 /** Enlace de WhatsApp al celular del huésped, con el número en formato internacional. */
@@ -37,12 +38,21 @@ function whatsappDe(telefono: string, texto?: string): string {
   return `https://wa.me/${numero}${texto ? `?text=${encodeURIComponent(texto)}` : ""}`;
 }
 
-function recordatorio(r: Reserva, cfg: Config, cuando: "hoy" | "mañana"): string {
+/** «hoy», «mañana» o «el lun, 16 nov 2026», según cuándo llega. */
+function cuandoLlega(entrada: string, hoy: string): string {
+  if (entrada === hoy) return "hoy";
+  if (entrada === sumarDias(hoy, 1)) return "mañana";
+  return `el ${formatoLargo(entrada)}`;
+}
+
+function recordatorio(r: Reserva, cfg: Config, hoy: string): string {
   const nombre = r.nombre.split(" ")[0];
   const saldo = r.total - r.anticipo;
   return [
     `Hola ${nombre} 👋, te escribimos de ${cfg.nombre}.`,
-    `Te recordamos que ${cuando === "hoy" ? "hoy" : "mañana"}, ${formatoLargo(r.entrada)}, te esperamos. La entrada es desde las ${cfg.checkIn} y la salida el ${formatoLargo(r.salida)} hasta las ${cfg.checkOut.replace(/\.$/, "")}.`,
+    `Te recordamos que te esperamos ${
+      r.entrada === hoy || r.entrada === sumarDias(hoy, 1) ? `${cuandoLlega(r.entrada, hoy)}, ${formatoLargo(r.entrada)}` : cuandoLlega(r.entrada, hoy)
+    }. La entrada es desde las ${cfg.checkIn} y la salida el ${formatoLargo(r.salida)} hasta las ${cfg.checkOut.replace(/\.$/, "")}.`,
     r.estado === "pendiente"
       ? `Aún no hemos confirmado tu pago de ${pesos(r.anticipo)} para separar. Si ya lo hiciste, envíanos el comprobante por aquí.`
       : saldo > 0
@@ -56,39 +66,56 @@ function recordatorio(r: Reserva, cfg: Config, cuando: "hoy" | "mañana"): strin
     .join("\n\n");
 }
 
-function Llegadas({ titulo, cuando, reservas, cfg }: { titulo: string; cuando: "hoy" | "mañana"; reservas: Reserva[]; cfg: Config }) {
+/** Llegadas de los próximos días, agrupadas por fecha. Mañana va resaltado: es cuando conviene el recordatorio. */
+function ProximasLlegadas({ reservas, hoy, dias, cfg }: { reservas: Reserva[]; hoy: string; dias: number; cfg: Config }) {
+  const manana = sumarDias(hoy, 1);
+  const porDia = new Map<string, Reserva[]>();
+  for (const r of reservas) porDia.set(r.entrada, [...(porDia.get(r.entrada) ?? []), r]);
   return (
-    <div className="rounded-[20px] border-[3px] border-black/5 bg-white p-4">
-      <h2 className="font-extrabold">{titulo}</h2>
-      {reservas.length === 0 ? (
-        <p className="mt-1 text-sm font-semibold text-suave">Nadie.</p>
+    <section className="rounded-[20px] border-[3px] border-black/5 bg-white p-4">
+      <h2 className="font-extrabold">🛎️ Próximas llegadas · {dias} días</h2>
+      {porDia.size === 0 ? (
+        <p className="mt-1 text-sm font-semibold text-suave">Nadie llega en los próximos {dias} días.</p>
       ) : (
-        <ul className="mt-2 space-y-3">
-          {reservas.map((r) => {
-            const n = diasEntre(r.entrada, r.salida);
-            return (
-              <li key={r.codigo} className="text-sm">
-                <p className="font-bold">
-                  {r.nombre} · {r.huespedes} pers. · {n} {n === 1 ? "noche" : "noches"}
-                  {r.estado === "pendiente" && <span className={`${boton} ml-2 ${ETIQUETA.pendiente}`}>sin pagar</span>}
-                </p>
-                <p className="text-xs font-semibold text-suave">
-                  {r.codigo} · sale {formatoLargo(r.salida)} · saldo al llegar {pesos(r.total - r.anticipo)}
-                </p>
-                <a
-                  href={whatsappDe(r.telefono, recordatorio(r, cfg, cuando))}
-                  target="_blank"
-                  rel="noopener"
-                  className="mt-1 inline-block rounded-full bg-[#25D366] text-white px-3 py-1.5 text-xs font-extrabold"
-                >
-                  💬 Enviar recordatorio
-                </a>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="mt-3 space-y-3">
+          {[...porDia].map(([fecha, lista]) => (
+            <div
+              key={fecha}
+              className={`rounded-[14px] p-3 ${fecha === manana ? "border-2 border-sol bg-sol/10" : "border-2 border-black/5"}`}
+            >
+              <p className="text-xs font-black tracking-widest uppercase text-suave">
+                {fecha === hoy ? "Hoy" : fecha === manana ? "Mañana · envía el recordatorio" : ""} {fecha === hoy || fecha === manana ? "·" : ""}{" "}
+                {formatoLargo(fecha)}
+              </p>
+              <ul className="mt-2 space-y-3">
+                {lista.map((r) => {
+                  const n = diasEntre(r.entrada, r.salida);
+                  return (
+                    <li key={r.codigo} className="text-sm">
+                      <p className="font-bold">
+                        {r.nombre} · {r.huespedes} pers. · {n} {n === 1 ? "noche" : "noches"}
+                        {r.estado === "pendiente" && <span className={`${boton} ml-2 ${ETIQUETA.pendiente}`}>sin pagar</span>}
+                      </p>
+                      <p className="text-xs font-semibold text-suave">
+                        {r.codigo} · sale {formatoLargo(r.salida)} · saldo al llegar {pesos(r.total - r.anticipo)}
+                      </p>
+                      <a
+                        href={whatsappDe(r.telefono, recordatorio(r, cfg, hoy))}
+                        target="_blank"
+                        rel="noopener"
+                        className="mt-1 inline-block rounded-full bg-[#25D366] text-white px-3 py-1.5 text-xs font-extrabold"
+                      >
+                        💬 Enviar recordatorio
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -114,12 +141,11 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
   const pagina = Math.max(1, Number(uno(sp.pagina)) || 1);
 
   const hoy = hoyEnColombia();
-  const [cifras, { reservas, total }, bloqueos, lleganHoy, lleganManana, cfg] = await Promise.all([
+  const [cifras, { reservas, total }, bloqueos, llegadas, cfg] = await Promise.all([
     resumen(),
     buscarReservas({ vista, estado, q, pagina }),
     listarBloqueos(),
-    reservasQueLlegan(hoy),
-    reservasQueLlegan(sumarDias(hoy, 1)),
+    reservasQueLlegan(hoy, sumarDias(hoy, DIAS_LLEGADAS - 1)),
     leerConfig(),
   ]);
   const ocupacion = cifras.diasDelMes ? Math.round((cifras.nochesOcupadasMes / cifras.diasDelMes) * 100) : 0;
@@ -150,10 +176,7 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2">
-        <Llegadas titulo={`🛎️ Llegan mañana · ${formatoLargo(sumarDias(hoy, 1))}`} cuando="mañana" reservas={lleganManana} cfg={cfg} />
-        <Llegadas titulo={`🏡 Llegan hoy · ${formatoLargo(hoy)}`} cuando="hoy" reservas={lleganHoy} cfg={cfg} />
-      </section>
+      <ProximasLlegadas reservas={llegadas} hoy={hoy} dias={DIAS_LLEGADAS} cfg={cfg} />
 
       {cifras.conNotas.length > 0 && (
         <section className="rounded-[20px] border-[3px] border-teja bg-teja/5 p-4 text-sm space-y-1">
