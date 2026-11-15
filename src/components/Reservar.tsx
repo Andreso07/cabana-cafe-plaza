@@ -28,6 +28,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
   const [errorCarga, setErrorCarga] = useState(false);
   const [entrada, setEntrada] = useState<Fecha | null>(null);
   const [salida, setSalida] = useState<Fecha | null>(null);
+  const [huespedes, setHuespedes] = useState(2);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +48,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
   }, []);
 
   const ocupadas = useMemo(() => new Set(disp?.ocupadas ?? []), [disp]);
-  const cot = entrada && salida ? cotizar(entrada, salida, cfg) : null;
+  const cot = entrada && salida ? cotizar(entrada, salida, cfg, huespedes) : null;
   const muyCorta = cot ? cot.noches.length < cot.minNoches : false;
   const desde = Math.min(cfg.precios.semana, cfg.precios.viernes, cfg.precios.finDeSemana);
 
@@ -64,7 +65,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
         body: JSON.stringify({
           entrada,
           salida,
-          huespedes: Number(f.get("huespedes")),
+          huespedes,
           nombre: f.get("nombre"),
           documento: f.get("documento"),
           email: f.get("email"),
@@ -154,6 +155,24 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
             >
               Cambiar fechas
             </button>
+            <label className="text-sm font-bold">
+              Huéspedes
+              <select
+                name="huespedes"
+                className={campo}
+                value={huespedes}
+                onChange={(e) => setHuespedes(Number(e.target.value))}
+              >
+                {Array.from({ length: cfg.capacidad }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {i + 1} {i === 0 ? "persona" : "personas"}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-xs font-semibold text-suave mt-1">
+                Hasta {cfg.personasPrecioBase} personas, precio de pareja; desde {cfg.personasPrecioBase + 1}, precio de grupo.
+              </span>
+            </label>
             <ul className="text-sm font-semibold bg-crema rounded-[16px] border-2 border-dashed border-teja/20 px-3 py-2">
               {cot.noches.map((n) => (
                 <li key={n.fecha} className="flex justify-between gap-2">
@@ -198,14 +217,6 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
               </p>
             ) : (
               <>
-                <label className="text-sm font-bold">
-                  Huéspedes
-                  <select name="huespedes" className={campo} defaultValue={2}>
-                    {Array.from({ length: cfg.capacidad }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>{i + 1}</option>
-                    ))}
-                  </select>
-                </label>
                 <label className="text-sm font-bold">
                   Nombre completo
                   <input name="nombre" required minLength={3} autoComplete="name" className={campo} />

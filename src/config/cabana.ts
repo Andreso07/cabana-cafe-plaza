@@ -12,7 +12,14 @@ export const LIMITES = {
 export type Servicio ={ icono: string; titulo: string; detalle: string };
 
 /** Fechas con precio propio por noche (temporadas, Carnaval, eventos). Ambos días incluidos. */
-export type FechaEspecial = { id: string; nombre: string; desde: string; hasta: string; precio: number };
+export type FechaEspecial = {
+  id: string;
+  nombre: string;
+  desde: string;
+  hasta: string;
+  precio: number; // por noche, hasta `personasPrecioBase` personas
+  precioGrupo?: number; // por noche, para más personas; si falta, el mismo `precio`
+};
 
 export type Descuento = {
   id: string;
@@ -58,10 +65,19 @@ export type Config = {
   checkOut: string;
 
   precios: {
-    semana: number; // domingo a jueves
+    semana: number; // entre semana (martes a jueves; el lunes no se alquila salvo festivo)
     viernes: number;
-    finDeSemana: number; // sábado, festivos y víspera de festivo
+    finDeSemana: number; // sábado, domingo, festivos y víspera de festivo
   };
+  // Precio por noche cuando van más de `personasPrecioBase` personas (las «2 parejas»).
+  preciosGrupo: {
+    semana: number;
+    viernes: number;
+    finDeSemana: number;
+  };
+  personasPrecioBase: number; // hasta cuántas personas aplica el precio de `precios` (1 pareja = 2)
+  // Días de la semana cuya noche no se alquila (0 = domingo, 1 = lunes…), salvo que sea festivo.
+  nochesCerradas: number[];
   porcentajeAnticipo: number;
   minNoches: number;
   horasApartado: number; // pago por transferencia
@@ -108,6 +124,10 @@ export const CONFIG_INICIAL: Config = {
   checkOut: "12:00 m.",
 
   precios: { semana: 150_000, viernes: 200_000, finDeSemana: 250_000 },
+  // Los de la sección de planes: 2 parejas 250 / 300 / 450 mil por noche.
+  preciosGrupo: { semana: 250_000, viernes: 300_000, finDeSemana: 450_000 },
+  personasPrecioBase: 2,
+  nochesCerradas: [1], // lunes, salvo festivo
   porcentajeAnticipo: 70,
   minNoches: 1,
   horasApartado: 4,
@@ -146,7 +166,7 @@ export const CONFIG_INICIAL: Config = {
       nombre: "Escapada entre semana",
       precio: 150000,
       unidad: "/ noche",
-      incluye: ["Domingo a jueves", "Cabaña completa, hasta 6 personas", "El precio más bajo de la semana"],
+      incluye: ["Martes a jueves", "Cabaña completa, hasta 4 personas", "El precio más bajo de la semana"],
       destacado: false,
     },
     {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { LIMITES } from "@/config/cabana";
 import { leerConfig } from "@/lib/config";
 import { diasEntre, esFechaValida, hoyEnColombia } from "@/lib/fechas";
-import { cotizar } from "@/lib/precios";
+import { cotizar, nocheCerrada } from "@/lib/precios";
 import { eventosExternos, nochesDe } from "@/lib/calendario";
 import { sincronizarDespues } from "@/lib/googleCalendar";
 import { crearReserva, FechasNoDisponibles } from "@/lib/store";
@@ -52,7 +52,10 @@ export async function POST(req: Request) {
   if (errores.length) return NextResponse.json({ error: errores.join(". ") }, { status: 400 });
 
   // El precio lo calcula el servidor con la configuración vigente, nunca el navegador.
-  const cot = cotizar(entrada as string, salida as string, cfg);
+  const cot = cotizar(entrada as string, salida as string, cfg, huespedes);
+  if (cot.noches.some((n) => nocheCerrada(n.fecha, cfg))) {
+    return NextResponse.json({ error: "Los lunes no hay servicio, salvo que sean festivos. Elige otras fechas." }, { status: 400 });
+  }
   if (cot.noches.length < cot.minNoches) {
     return NextResponse.json(
       { error: `La estadía mínima es de ${cot.minNoches} noches` },

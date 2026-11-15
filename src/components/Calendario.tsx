@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { aDate, sumarDias, type Fecha } from "@/lib/fechas";
 import { esFestivo } from "@/lib/festivos";
-import { tipoNoche, type ConfigPrecios } from "@/lib/precios";
+import { nocheCerrada, tipoNoche, type ConfigPrecios } from "@/lib/precios";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -47,16 +47,20 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
 
   const maxDesplazamiento = 11;
 
+  // Una noche no se puede tomar si está reservada o si ese día no hay servicio (los lunes).
+  const cerrada = (f: Fecha) => !ocupadas.has(f) && nocheCerrada(f, cfg);
+  const noDisponible = (f: Fecha) => ocupadas.has(f) || nocheCerrada(f, cfg);
+
   function nochesLibres(desde: Fecha, hasta: Fecha) {
-    for (let f = desde; f < hasta; f = sumarDias(f, 1)) if (ocupadas.has(f)) return false;
+    for (let f = desde; f < hasta; f = sumarDias(f, 1)) if (noDisponible(f)) return false;
     return true;
   }
 
   function clic(f: Fecha) {
     setAviso(null);
     if (!entrada || salida || f <= entrada) {
-      if (ocupadas.has(f)) {
-        setAviso("Esa noche ya está ocupada.");
+      if (noDisponible(f)) {
+        setAviso(cerrada(f) ? "Los lunes no hay servicio, salvo festivos. Ese día sí puedes salir." : "Esa noche ya está ocupada.");
         return;
       }
       onCambio(f, null);
@@ -65,11 +69,11 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
     if (!nochesLibres(entrada, f)) {
       // No se puede salir ese día: hay noches ocupadas en medio. Si ese día está libre,
       // lo más probable es que la persona quiera empezar ahí; se toma como nueva llegada.
-      if (!ocupadas.has(f)) {
+      if (!noDisponible(f)) {
         onCambio(f, null);
-        setAviso("Había noches ocupadas en medio, así que empezamos de nuevo desde este día.");
+        setAviso("Había noches no disponibles en medio, así que empezamos de nuevo desde este día.");
       } else {
-        setAviso("Hay noches ocupadas en medio. Elige otra fecha de salida.");
+        setAviso("Hay noches no disponibles en medio. Elige otra fecha de salida.");
       }
       return;
     }
@@ -118,12 +122,13 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
                 if (!f) return <span key={j} />;
                 const pasado = f < hoy || f > ultimoDia;
                 const ocupada = ocupadas.has(f);
+                const sinServicio = cerrada(f);
                 const esEntrada = f === entrada;
                 const esSalida = f === salida;
                 const enRango = entrada && salida && f > entrada && f < salida;
                 // El día de salida puede ser una noche ocupada: se sale antes de que llegue el siguiente.
                 const puedeSerSalida = Boolean(entrada && !salida && f > entrada && nochesLibres(entrada, f));
-                const deshabilitado = pasado || (ocupada && !puedeSerSalida);
+                const deshabilitado = pasado || ((ocupada || sinServicio) && !puedeSerSalida);
                 const festivo = esFestivo(f);
                 const noche = tipoNoche(f, cfg);
                 const especial = noche.tipo === "especial";
@@ -136,6 +141,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
                 else if (pasado) clase = "bg-black/[0.03] border-transparent text-black/20";
                 else if (ocupada && puedeSerSalida) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto hover:border-ocupado-texto";
                 else if (ocupada) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto line-through";
+                // Lunes sin servicio: gris, no rojo (no está reservado), pero sí sirve como día de salida.
+                else if (sinServicio && puedeSerSalida) clase = "bg-black/[0.04] border-black/10 text-black/50 hover:border-black/30";
+                else if (sinServicio) clase = "bg-black/[0.04] border-transparent text-black/30";
 
                 return (
                   <button
@@ -144,14 +152,14 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
                     disabled={deshabilitado}
                     onClick={() => clic(f)}
                     className={`relative aspect-square rounded-[12px] border-2 flex flex-col items-center justify-center text-sm font-extrabold transition-colors disabled:cursor-not-allowed ${clase}`}
-                    aria-label={`${f}${ocupada ? ", ocupado" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
+                    aria-label={`${f}${ocupada ? ", ocupado" : ""}${sinServicio ? ", sin servicio" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
                     title={especial ? noche.nombre : undefined}
                     aria-pressed={esEntrada || esSalida}
                   >
                     <span className={festivo && !esEntrada && !esSalida ? "text-teja font-semibold" : ""}>
                       {Number(f.slice(8))}
                     </span>
-                    {especial && !pasado && !ocupada && !esEntrada && !esSalida && (
+                    {especial && !pasado && !ocupada && !sinServicio && !esEntrada && !esSalida && (
                       <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-sol" aria-hidden />
                     )}
                   </button>
@@ -165,11 +173,15 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, onC
       <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-suave">
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-libre border border-libre-borde" /> Disponible</span>
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-ocupado border border-ocupado-borde" /> Reservado</span>
+        {cfg.nochesCerradas.length > 0 && (
+          <span className="flex items-center gap-1"><span className="size-3 rounded bg-black/[0.08]" /> Sin servicio (lunes, salvo festivos)</span>
+        )}
         <span className="flex items-center gap-1"><span className="size-3 rounded bg-teja" /> Tu selección</span>
         <span className="flex items-center gap-1"><span className="text-teja font-semibold">15</span> Festivo</span>
         {cfg.fechasEspeciales.length > 0 && (
           <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sol" /> Fecha especial</span>
-        )}      </div>
+        )}
+      </div>
       {aviso && <p className="mt-2 text-sm text-teja-oscura" role="alert">{aviso}</p>}
     </div>
   );

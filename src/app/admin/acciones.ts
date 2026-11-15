@@ -144,10 +144,20 @@ export async function guardarPrecios(form: FormData) {
     if (!/^57\d{10}$/.test(whatsapp)) throw new Invalido("WhatsApp: escribe el celular de 10 dígitos");
     return {
       precios: {
-        semana: numero(form, "semana", "Domingo a jueves", 10_000, 10_000_000),
+        semana: numero(form, "semana", "Entre semana", 10_000, 10_000_000),
         viernes: numero(form, "viernes", "Viernes", 10_000, 10_000_000),
-        finDeSemana: numero(form, "finDeSemana", "Sábado y festivos", 10_000, 10_000_000),
+        finDeSemana: numero(form, "finDeSemana", "Sábado, domingo y festivos", 10_000, 10_000_000),
       },
+      preciosGrupo: {
+        semana: numero(form, "grupoSemana", "Grupo, entre semana", 10_000, 10_000_000),
+        viernes: numero(form, "grupoViernes", "Grupo, viernes", 10_000, 10_000_000),
+        finDeSemana: numero(form, "grupoFinDeSemana", "Grupo, sábado, domingo y festivos", 10_000, 10_000_000),
+      },
+      personasPrecioBase: numero(form, "personasPrecioBase", "Personas con precio de pareja", 1, 30),
+      nochesCerradas: form
+        .getAll("nochesCerradas")
+        .map(Number)
+        .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6),
       porcentajeAnticipo: numero(form, "porcentajeAnticipo", "Porcentaje para separar", 1, 100),
       minNoches: numero(form, "minNoches", "Noches mínimas", 1, 30),
       horasApartado: numero(form, "horasApartado", "Horas de apartado", 1, 72),
@@ -255,8 +265,11 @@ export async function agregarFechaEspecial(form: FormData) {
     if (!nombre) throw new Invalido("Fecha especial: ponle un nombre, por ejemplo «Carnaval de Negros y Blancos»");
     const cfg = await leerConfig();
     const precio = numero(form, "precio", "Precio por noche", 10_000, 10_000_000);
+    const precioGrupo = texto(form, "precioGrupo", 20)
+      ? numero(form, "precioGrupo", "Precio por noche para grupo", 10_000, 10_000_000)
+      : undefined;
     return {
-      fechasEspeciales: [...cfg.fechasEspeciales, { id: nuevoId(), nombre, desde, hasta, precio }].sort((a, b) =>
+      fechasEspeciales: [...cfg.fechasEspeciales, { id: nuevoId(), nombre, desde, hasta, precio, ...(precioGrupo ? { precioGrupo } : {}) }].sort((a, b) =>
         a.desde.localeCompare(b.desde),
       ),
     };

@@ -77,6 +77,9 @@ export default async function Inicio() {
             conWompi={wompiConfigurado()}
             cfg={{
               precios: cfg.precios,
+              preciosGrupo: cfg.preciosGrupo,
+              personasPrecioBase: cfg.personasPrecioBase,
+              nochesCerradas: cfg.nochesCerradas,
               porcentajeAnticipo: cfg.porcentajeAnticipo,
               minNoches: cfg.minNoches,
               fechasEspeciales: cfg.fechasEspeciales,

@@ -24,38 +24,77 @@ function desescapar(v: string): string {
   return v.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1").trim();
 }
 
-/** Fecha de Colombia de un DTSTART/DTEND. Devuelve también si era un día completo. */
-function fechaDe(valor: string): { fecha: Fecha; diaCompleto: boolean } | null {
+/** Un DTSTART/DTEND en hora de Colombia: el día y, si no es de día completo, los minutos desde medianoche. */
+function momentoDe(valor: string): { fecha: Fecha; minutos: number | null } | null {
   const m = valor.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/);
   if (!m) return null;
-  const [, a, me, d, h, mi, s, z] = m;
-  if (!h) return { fecha: `${a}-${me}-${d}`, diaCompleto: true };
+  const [, a, me, d, h, mi, , z] = m;
+  if (!h) return { fecha: `${a}-${me}-${d}`, minutos: null };
   if (z) {
     // UTC → Colombia (UTC−5 todo el año, sin horario de verano).
-    const t = Date.UTC(+a, +me - 1, +d, +h, +mi, +s) - 5 * 3600_000;
-    return { fecha: new Date(t).toISOString().slice(0, 10), diaCompleto: false };
+    const t = new Date(Date.UTC(+a, +me - 1, +d, +h, +mi) - 5 * 3600_000);
+    return { fecha: t.toISOString().slice(0, 10), minutos: t.getUTCHours() * 60 + t.getUTCMinutes() };
   }
-  // Hora local con TZID (o sin zona): se toma la fecha tal cual. Para un calendario
-  // en Colombia es exacto; en otra zona puede correr un día un evento de madrugada.
-  return { fecha: `${a}-${me}-${d}`, diaCompleto: false };
+  // Hora local con TZID (o sin zona): se toma tal cual. Para un calendario en Colombia es exacto.
+  return { fecha: `${a}-${me}-${d}`, minutos: +h * 60 + +mi };
+}
+
+/** Horas de entrada y salida de una noche, en minutos desde medianoche. */
+export type Horario = { entrada: number; salida: number };
+export const HORARIO_POR_DEFECTO: Horario = { entrada: 16 * 60, salida: 12 * 60 };
+
+/** «4:00 p. m.» → 960; «12:00 m.» → 720; «10 a. m.» → 600. Si no se entiende, `defecto`. */
+export function aMinutos(texto: string, defecto: number): number {
+  const m = texto.toLowerCase().match(/(\d{1,2})(?::(\d{2}))?\s*([ap])?/);
+  if (!m) return defecto;
+  let h = +m[1];
+  const min = m[2] ? +m[2] : 0;
+  if (h > 23 || min > 59) return defecto;
+  if (m[3] === "p" && h < 12) h += 12;
+  if (m[3] === "a" && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+const dia = (f: Fecha) => Date.UTC(+f.slice(0, 4), +f.slice(5, 7) - 1, +f.slice(8, 10)) / 86_400_000;
+
+/**
+ * Noches que ocupa un evento con hora: la noche del día D va de la entrada de D a la salida de D+1,
+ * y la ocupa todo evento que se cruce con ese tramo. Así una reserva por horas de 9:00 a. m. a
+ * 2:00 p. m. no ocupa ninguna noche si la anterior se fue a las 12:00 y la siguiente llega a las 4:00;
+ * una de 3:00 a 6:00 p. m. sí ocupa la noche de ese día.
+ */
+function nochesConHora(ini: Fecha, iniMin: number, fin: Fecha, finMin: number, h: Horario): { desde: Fecha; hasta: Fecha } | null {
+  const s = dia(ini) * 1440 + iniMin;
+  let e = dia(fin) * 1440 + finMin;
+  if (e <= s) e = s + 60; // sin fin o fin antes del inicio: una hora
+  let desde: Fecha | null = null;
+  let hasta: Fecha | null = null;
+  for (let d = sumarDias(ini, -1); d <= fin; d = sumarDias(d, 1)) {
+    const nocheIni = dia(d) * 1440 + h.entrada;
+    const nocheFin = (dia(d) + 1) * 1440 + h.salida;
+    if (s < nocheFin && e > nocheIni) {
+      desde ??= d;
+      hasta = sumarDias(d, 1);
+    }
+  }
+  return desde && hasta ? { desde, hasta } : null;
 }
 
 /**
- * Eventos de un .ics convertidos a noches ocupadas. Un evento de día completo ocupa desde su
- * inicio hasta el día anterior a su fin; uno con hora, desde el día en que empieza hasta el día
- * anterior al que termina (salir el domingo a mediodía no ocupa la noche del domingo), y como
- * mínimo la noche del día en que empieza.
+ * Eventos de un .ics convertidos a noches ocupadas. Uno de día completo ocupa desde su inicio
+ * hasta el día anterior a su fin. Uno con hora ocupa las noches con las que se cruza (ver
+ * `nochesConHora`): una reserva por horas que cabe entre la salida y la entrada no ocupa ninguna.
  * Se ignoran los cancelados, los marcados como «Disponible» y los que generó esta misma web.
  * Las repeticiones (RRULE) no se expanden: cuenta solo la primera.
  */
-export function leerIcs(ics: string): EventoExterno[] {
+export function leerIcs(ics: string, horario: Horario = HORARIO_POR_DEFECTO): EventoExterno[] {
   const eventos: EventoExterno[] = [];
   let ev: Record<string, string> | null = null;
   for (const linea of lineas(ics)) {
     if (linea === "BEGIN:VEVENT") ev = {};
     else if (linea === "END:VEVENT" && ev) {
-      const ini = ev.DTSTART ? fechaDe(ev.DTSTART) : null;
-      const fin = ev.DTEND ? fechaDe(ev.DTEND) : null;
+      const ini = ev.DTSTART ? momentoDe(ev.DTSTART) : null;
+      const fin = ev.DTEND ? momentoDe(ev.DTEND) : null;
       const ignorar =
         !ini ||
         ev.STATUS === "CANCELLED" ||
@@ -64,9 +103,15 @@ export function leerIcs(ics: string): EventoExterno[] {
         // Los que la web escribe con la API de Google (ver googleCalendar.ts): ya están en la web.
         /^cabana[01][0-9a-f]+@google\.com$/.test(ev.UID ?? "");
       if (!ignorar && ini) {
-        let hasta = fin?.fecha ?? sumarDias(ini.fecha, 1);
-        if (hasta <= ini.fecha) hasta = sumarDias(ini.fecha, 1);
-        eventos.push({ desde: ini.fecha, hasta, resumen: desescapar(ev.SUMMARY ?? "Ocupado").slice(0, 80) });
+        const resumen = desescapar(ev.SUMMARY ?? "Ocupado").slice(0, 80);
+        if (ini.minutos === null) {
+          let hasta = fin?.fecha ?? sumarDias(ini.fecha, 1);
+          if (hasta <= ini.fecha) hasta = sumarDias(ini.fecha, 1);
+          eventos.push({ desde: ini.fecha, hasta, resumen });
+        } else {
+          const n = nochesConHora(ini.fecha, ini.minutos, fin?.fecha ?? ini.fecha, fin?.minutos ?? ini.minutos, horario);
+          if (n) eventos.push({ ...n, resumen });
+        }
       }
       ev = null;
     } else if (ev) {
@@ -100,7 +145,11 @@ export type EstadoExterno = {
  * en el panel. Nunca lanza: un Google caído no debe tumbar la web de reservas.
  */
 export async function eventosExternos(): Promise<EstadoExterno> {
-  const { googleIcalUrl: url } = await leerConfig();
+  const { googleIcalUrl: url, checkIn, checkOut } = await leerConfig();
+  const horario: Horario = {
+    entrada: aMinutos(checkIn, HORARIO_POR_DEFECTO.entrada),
+    salida: aMinutos(checkOut, HORARIO_POR_DEFECTO.salida),
+  };
   if (!url) return { configurado: false, eventos: [], leidoEn: null, error: null };
 
   const previo = g.__calendarioExterno?.url === url ? g.__calendarioExterno : undefined;
@@ -112,7 +161,7 @@ export async function eventosExternos(): Promise<EstadoExterno> {
     const texto = (await r.text()).slice(0, 3_000_000);
     if (!texto.includes("BEGIN:VCALENDAR")) throw new Error("La dirección no devolvió un calendario");
     const desde = sumarDias(hoyEnColombia(), -1);
-    const eventos = leerIcs(texto).filter((e) => e.hasta > desde);
+    const eventos = leerIcs(texto, horario).filter((e) => e.hasta > desde);
     g.__calendarioExterno = { url, eventos, leido: Date.now() };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);

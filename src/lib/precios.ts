@@ -8,25 +8,45 @@ import { esFestivo } from "./festivos";
 /** Lo que el cálculo necesita de la configuración (es lo que viaja al navegador). */
 export type ConfigPrecios = Pick<
   Config,
-  "precios" | "porcentajeAnticipo" | "minNoches" | "fechasEspeciales" | "descuentos"
+  | "precios"
+  | "preciosGrupo"
+  | "personasPrecioBase"
+  | "nochesCerradas"
+  | "porcentajeAnticipo"
+  | "minNoches"
+  | "fechasEspeciales"
+  | "descuentos"
 >;
+
+/** Noche que no se alquila (los lunes, por ejemplo), salvo que ese día sea festivo. */
+export function nocheCerrada(fecha: Fecha, cfg: Pick<ConfigPrecios, "nochesCerradas">): boolean {
+  return cfg.nochesCerradas.includes(diaSemana(fecha)) && !esFestivo(fecha);
+}
 
 export type TipoNoche = "semana" | "viernes" | "finDeSemana" | "especial";
 
-export function tipoNoche(fecha: Fecha, cfg: ConfigPrecios): { tipo: TipoNoche; precio: number; nombre?: string } {
+/**
+ * Tipo y precio de una noche. Con más de `personasPrecioBase` huéspedes se usa el precio
+ * de grupo (las «2 parejas»).
+ */
+export function tipoNoche(
+  fecha: Fecha,
+  cfg: ConfigPrecios,
+  huespedes = 1,
+): { tipo: TipoNoche; precio: number; nombre?: string } {
+  const grupo = huespedes > cfg.personasPrecioBase;
   const especial = cfg.fechasEspeciales.find((e) => fecha >= e.desde && fecha <= e.hasta);
-  if (especial) return { tipo: "especial", precio: especial.precio, nombre: especial.nombre };
-  const dia = diaSemana(fecha);
-  // Sábado, día festivo o víspera de festivo (el domingo de un puente).
-  if (dia === 6 || esFestivo(fecha) || esFestivo(sumarDias(fecha, 1))) {
-    return { tipo: "finDeSemana", precio: cfg.precios.finDeSemana };
+  if (especial) {
+    return { tipo: "especial", precio: grupo ? (especial.precioGrupo ?? especial.precio) : especial.precio, nombre: especial.nombre };
   }
-  if (dia === 5) return { tipo: "viernes", precio: cfg.precios.viernes };
-  return { tipo: "semana", precio: cfg.precios.semana };
-}
-
-export function precioNoche(fecha: Fecha, cfg: ConfigPrecios): number {
-  return tipoNoche(fecha, cfg).precio;
+  const tabla = grupo ? cfg.preciosGrupo : cfg.precios;
+  const dia = diaSemana(fecha);
+  // Sábado, domingo, día festivo o víspera de festivo.
+  if (dia === 6 || dia === 0 || esFestivo(fecha) || esFestivo(sumarDias(fecha, 1))) {
+    return { tipo: "finDeSemana", precio: tabla.finDeSemana };
+  }
+  if (dia === 5) return { tipo: "viernes", precio: tabla.viernes };
+  return { tipo: "semana", precio: tabla.semana };
 }
 
 const aMil = (v: number) => Math.round(v / 1000) * 1000;
@@ -46,8 +66,8 @@ function aplica(d: Descuento, entrada: Fecha, n: number): boolean {
   return d.tipo === "noches" ? n >= d.minNoches : entrada >= d.desde && entrada <= d.hasta;
 }
 
-export function cotizar(entrada: Fecha, salida: Fecha, cfg: ConfigPrecios): Cotizacion {
-  const lista = noches(entrada, salida).map((fecha) => ({ fecha, ...tipoNoche(fecha, cfg) }));
+export function cotizar(entrada: Fecha, salida: Fecha, cfg: ConfigPrecios, huespedes: number): Cotizacion {
+  const lista = noches(entrada, salida).map((fecha) => ({ fecha, ...tipoNoche(fecha, cfg, huespedes) }));
   const subtotal = lista.reduce((s, n) => s + n.precio, 0);
 
   // Se aplica el mejor descuento disponible; no se acumulan.

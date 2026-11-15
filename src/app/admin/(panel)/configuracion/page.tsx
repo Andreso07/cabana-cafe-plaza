@@ -96,18 +96,44 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
         <p className="rounded-[16px] bg-teja/10 text-teja-oscura font-extrabold px-4 py-3" role="alert">⚠️ {error}</p>
       )}
 
-      <Tarjeta id="precios" titulo="Precios y pago" ayuda="Precio por noche de la cabaña completa. El calendario, los planes y el cobro usan estos valores.">
+      <Tarjeta id="precios" titulo="Precios y pago" ayuda="Precio por noche de la cabaña completa. El cobro al reservar usa estos valores según cuántas personas van.">
         <form action={guardarPrecios} className="grid gap-4 md:grid-cols-3">
-          <Campo nombre="semana" titulo="Domingo a jueves" valor={cfg.precios.semana} inputMode="numeric" required />
+          <p className="md:col-span-3 text-sm font-extrabold">
+            Por noche, 1 pareja (hasta{" "}
+            <input
+              name="personasPrecioBase"
+              defaultValue={cfg.personasPrecioBase}
+              inputMode="numeric"
+              required
+              className="w-12 rounded-[8px] border-2 border-black/[0.06] bg-crema px-1.5 py-0.5 text-center"
+            />{" "}
+            personas)
+          </p>
+          <Campo nombre="semana" titulo="Entre semana (martes a jueves)" valor={cfg.precios.semana} inputMode="numeric" required />
           <Campo nombre="viernes" titulo="Viernes" valor={cfg.precios.viernes} inputMode="numeric" required />
           <Campo
             nombre="finDeSemana"
-            titulo="Sábado, festivos y víspera de festivo"
+            titulo="Sábado, domingo, festivos y víspera de festivo"
             valor={cfg.precios.finDeSemana}
             inputMode="numeric"
             required
-            ayuda="La víspera es, por ejemplo, el domingo de un puente."
+            ayuda="La víspera es el día antes de un festivo, por ejemplo un jueves antes de un viernes festivo."
           />
+          <p className="md:col-span-3 text-sm font-extrabold">Por noche, 2 parejas (desde {cfg.personasPrecioBase + 1} personas)</p>
+          <Campo nombre="grupoSemana" titulo="Entre semana (martes a jueves)" valor={cfg.preciosGrupo.semana} inputMode="numeric" required />
+          <Campo nombre="grupoViernes" titulo="Viernes" valor={cfg.preciosGrupo.viernes} inputMode="numeric" required />
+          <Campo nombre="grupoFinDeSemana" titulo="Sábado, domingo, festivos y víspera" valor={cfg.preciosGrupo.finDeSemana} inputMode="numeric" required />
+          <fieldset className="md:col-span-3">
+            <legend className={etiqueta}>Noches sin servicio (se abren solas si ese día es festivo)</legend>
+            <div className="mt-1 flex flex-wrap gap-3 text-sm font-semibold">
+              {["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((d, i) => (
+                <label key={d} className="flex gap-1.5 items-center">
+                  <input type="checkbox" name="nochesCerradas" value={i} defaultChecked={cfg.nochesCerradas.includes(i)} className="accent-teja" />
+                  {d}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <Campo nombre="porcentajeAnticipo" titulo="% para separar" valor={cfg.porcentajeAnticipo} inputMode="numeric" required />
           <Campo nombre="minNoches" titulo="Noches mínimas" valor={cfg.minNoches} inputMode="numeric" required />
           <Campo
@@ -138,8 +164,9 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
         ayuda="Las tarjetas de la sección «Planes» de la web. Son la vitrina: lo que se cobra al reservar sale del precio de cada noche, así que mantén los dos de acuerdo."
       >
         <p className="text-xs font-bold text-suave mb-4">
-          Con los precios por noche de hoy: 1 noche entre semana {pesos(semana)} · viernes + sábado {pesos(viernes + finDeSemana)} ·
-          viernes a lunes festivo {pesos(viernes + finDeSemana * 2)}.
+          Lo que cobra la web por noche hoy: entre semana {pesos(semana)} pareja / {pesos(cfg.preciosGrupo.semana)} grupo · viernes{" "}
+          {pesos(viernes)} / {pesos(cfg.preciosGrupo.viernes)} · sábado, domingo, festivo o víspera {pesos(finDeSemana)} /{" "}
+          {pesos(cfg.preciosGrupo.finDeSemana)}.
         </p>
         <form action={guardarPlanes} className="space-y-4">
           <input type="hidden" name="totalPlanes" value={tarjetasPlanes.length} />
@@ -295,7 +322,10 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           {cfg.fechasEspeciales.map((f) => (
             <li key={f.id} className={`flex flex-wrap gap-3 items-center ${f.hasta < hoy ? "opacity-50" : ""}`}>
               <span className="size-2 rounded-full bg-sol" />
-              <span><strong>{f.nombre}</strong>: {formatoLargo(f.desde)} → {formatoLargo(f.hasta)} · {pesos(f.precio)} / noche</span>
+              <span>
+                <strong>{f.nombre}</strong>: {formatoLargo(f.desde)} → {formatoLargo(f.hasta)} · {pesos(f.precio)} / noche
+                {f.precioGrupo ? ` (grupo ${pesos(f.precioGrupo)})` : ""}
+              </span>
               <form action={quitarFechaEspecial}>
                 <input type="hidden" name="id" value={f.id} />
                 <BotonConfirmar pregunta={`¿Quitar «${f.nombre}»?`} className="text-xs underline text-suave">Quitar</BotonConfirmar>
@@ -303,11 +333,12 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
             </li>
           ))}
         </ul>
-        <form action={agregarFechaEspecial} className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] items-end">
+        <form action={agregarFechaEspecial} className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto] items-end">
           <Campo nombre="nombre" titulo="Nombre" valor="" placeholder="Carnaval de Negros y Blancos" required />
           <Campo nombre="desde" titulo="Desde" valor="" type="date" min={hoy} required />
           <Campo nombre="hasta" titulo="Hasta (incluido)" valor="" type="date" min={hoy} />
-          <Campo nombre="precio" titulo="Precio por noche" valor="" inputMode="numeric" placeholder="300000" required />
+          <Campo nombre="precio" titulo="Por noche, pareja" valor="" inputMode="numeric" placeholder="300000" required />
+          <Campo nombre="precioGrupo" titulo="Por noche, grupo" valor="" inputMode="numeric" placeholder="Opcional" />
           <button className={guardarBtn}>Agregar</button>
         </form>
       </Tarjeta>
