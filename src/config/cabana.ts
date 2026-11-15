@@ -67,13 +67,15 @@ export type Config = {
   precios: {
     semana: number; // entre semana (martes a jueves; el lunes no se alquila salvo festivo)
     viernes: number;
-    finDeSemana: number; // sábado, domingo, festivos y víspera de festivo
+    finDeSemana: number; // sábado, domingo, festivo y víspera de festivo
+    puente: number; // las DOS noches juntas (sábado y domingo) de un fin de semana con lunes festivo
   };
   // Precio por noche cuando van más de `personasPrecioBase` personas (las «2 parejas»).
   preciosGrupo: {
     semana: number;
     viernes: number;
     finDeSemana: number;
+    puente: number;
   };
   personasPrecioBase: number; // hasta cuántas personas aplica el precio de `precios` (1 pareja = 2)
   // Días de la semana cuya noche no se alquila (0 = domingo, 1 = lunes…), salvo que sea festivo.
@@ -123,9 +125,9 @@ export const CONFIG_INICIAL: Config = {
   checkIn: "4:00 p. m.",
   checkOut: "12:00 m.",
 
-  precios: { semana: 150_000, viernes: 200_000, finDeSemana: 250_000 },
+  precios: { semana: 150_000, viernes: 200_000, finDeSemana: 250_000, puente: 300_000 },
   // Los de la sección de planes: 2 parejas 250 / 300 / 450 mil por noche.
-  preciosGrupo: { semana: 250_000, viernes: 300_000, finDeSemana: 450_000 },
+  preciosGrupo: { semana: 250_000, viernes: 350_000, finDeSemana: 450_000, puente: 500_000 },
   personasPrecioBase: 2,
   nochesCerradas: [1], // lunes, salvo festivo
   porcentajeAnticipo: 70,

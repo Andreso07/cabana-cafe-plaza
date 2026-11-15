@@ -146,12 +146,14 @@ export async function guardarPrecios(form: FormData) {
       precios: {
         semana: numero(form, "semana", "Entre semana", 10_000, 10_000_000),
         viernes: numero(form, "viernes", "Viernes", 10_000, 10_000_000),
-        finDeSemana: numero(form, "finDeSemana", "Sábado, domingo y festivos", 10_000, 10_000_000),
+        finDeSemana: numero(form, "finDeSemana", "Sábado y domingo", 10_000, 10_000_000),
+        puente: numero(form, "puente", "Puente (las 2 noches)", 10_000, 10_000_000),
       },
       preciosGrupo: {
         semana: numero(form, "grupoSemana", "Grupo, entre semana", 10_000, 10_000_000),
         viernes: numero(form, "grupoViernes", "Grupo, viernes", 10_000, 10_000_000),
-        finDeSemana: numero(form, "grupoFinDeSemana", "Grupo, sábado, domingo y festivos", 10_000, 10_000_000),
+        finDeSemana: numero(form, "grupoFinDeSemana", "Grupo, sábado y domingo", 10_000, 10_000_000),
+        puente: numero(form, "grupoPuente", "Grupo, puente (las 2 noches)", 10_000, 10_000_000),
       },
       personasPrecioBase: numero(form, "personasPrecioBase", "Personas con precio de pareja", 1, 30),
       nochesCerradas: form

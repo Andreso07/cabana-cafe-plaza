@@ -113,16 +113,25 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           <Campo nombre="viernes" titulo="Viernes" valor={cfg.precios.viernes} inputMode="numeric" required />
           <Campo
             nombre="finDeSemana"
-            titulo="Sábado, domingo, festivos y víspera de festivo"
+            titulo="Sábado y domingo"
             valor={cfg.precios.finDeSemana}
             inputMode="numeric"
             required
-            ayuda="La víspera es el día antes de un festivo, por ejemplo un jueves antes de un viernes festivo."
+            ayuda="También un día festivo o la víspera de un festivo."
+          />
+          <Campo
+            nombre="puente"
+            titulo="Puente: sábado y domingo juntos"
+            valor={cfg.precios.puente}
+            inputMode="numeric"
+            required
+            ayuda="Precio de las DOS noches, cuando el lunes es festivo. Una sola de ellas se cobra a precio normal."
           />
           <p className="md:col-span-3 text-sm font-extrabold">Por noche, 2 parejas (desde {cfg.personasPrecioBase + 1} personas)</p>
           <Campo nombre="grupoSemana" titulo="Entre semana (martes a jueves)" valor={cfg.preciosGrupo.semana} inputMode="numeric" required />
           <Campo nombre="grupoViernes" titulo="Viernes" valor={cfg.preciosGrupo.viernes} inputMode="numeric" required />
-          <Campo nombre="grupoFinDeSemana" titulo="Sábado, domingo, festivos y víspera" valor={cfg.preciosGrupo.finDeSemana} inputMode="numeric" required />
+          <Campo nombre="grupoFinDeSemana" titulo="Sábado y domingo" valor={cfg.preciosGrupo.finDeSemana} inputMode="numeric" required />
+          <Campo nombre="grupoPuente" titulo="Puente: sábado y domingo juntos" valor={cfg.preciosGrupo.puente} inputMode="numeric" required />
           <fieldset className="md:col-span-3">
             <legend className={etiqueta}>Noches sin servicio (se abren solas si ese día es festivo)</legend>
             <div className="mt-1 flex flex-wrap gap-3 text-sm font-semibold">
@@ -165,8 +174,8 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
       >
         <p className="text-xs font-bold text-suave mb-4">
           Lo que cobra la web por noche hoy: entre semana {pesos(semana)} pareja / {pesos(cfg.preciosGrupo.semana)} grupo · viernes{" "}
-          {pesos(viernes)} / {pesos(cfg.preciosGrupo.viernes)} · sábado, domingo, festivo o víspera {pesos(finDeSemana)} /{" "}
-          {pesos(cfg.preciosGrupo.finDeSemana)}.
+          {pesos(viernes)} / {pesos(cfg.preciosGrupo.viernes)} · sábado y domingo {pesos(finDeSemana)} /{" "}
+          {pesos(cfg.preciosGrupo.finDeSemana)} · puente (las 2 noches) {pesos(cfg.precios.puente)} / {pesos(cfg.preciosGrupo.puente)}.
         </p>
         <form action={guardarPlanes} className="space-y-4">
           <input type="hidden" name="totalPlanes" value={tarjetasPlanes.length} />

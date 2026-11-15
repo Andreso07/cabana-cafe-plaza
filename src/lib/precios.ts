@@ -23,7 +23,15 @@ export function nocheCerrada(fecha: Fecha, cfg: Pick<ConfigPrecios, "nochesCerra
   return cfg.nochesCerradas.includes(diaSemana(fecha)) && !esFestivo(fecha);
 }
 
-export type TipoNoche = "semana" | "viernes" | "finDeSemana" | "especial";
+export type TipoNoche = "semana" | "viernes" | "finDeSemana" | "puente" | "especial";
+
+/**
+ * Sábado de puente: el sábado de un fin de semana cuyo lunes es festivo. Las noches del sábado y
+ * del domingo de ese puente se venden juntas a un precio cerrado (`precios.puente`).
+ */
+export function sabadoDePuente(fecha: Fecha): boolean {
+  return diaSemana(fecha) === 6 && esFestivo(sumarDias(fecha, 2));
+}
 
 /**
  * Tipo y precio de una noche. Con más de `personasPrecioBase` huéspedes se usa el precio
@@ -68,6 +76,19 @@ function aplica(d: Descuento, entrada: Fecha, n: number): boolean {
 
 export function cotizar(entrada: Fecha, salida: Fecha, cfg: ConfigPrecios, huespedes: number): Cotizacion {
   const lista = noches(entrada, salida).map((fecha) => ({ fecha, ...tipoNoche(fecha, cfg, huespedes) }));
+
+  // Puente: si la estadía incluye el sábado y el domingo de un fin de semana con lunes festivo,
+  // esas dos noches cuestan juntas el precio de puente, repartido entre las dos. Una sola de
+  // ellas, sin la otra, se cobra a su precio normal.
+  const precioPuente = huespedes > cfg.personasPrecioBase ? cfg.preciosGrupo.puente : cfg.precios.puente;
+  for (let i = 0; i + 1 < lista.length; i++) {
+    const [sab, dom] = [lista[i], lista[i + 1]];
+    if (!sabadoDePuente(sab.fecha) || sab.tipo === "especial" || dom.tipo === "especial") continue;
+    const mitad = Math.round(precioPuente / 2 / 1000) * 1000;
+    lista[i] = { ...sab, tipo: "puente", precio: mitad, nombre: "Puente festivo" };
+    lista[i + 1] = { ...dom, tipo: "puente", precio: precioPuente - mitad, nombre: "Puente festivo" };
+    i++;
+  }
   const subtotal = lista.reduce((s, n) => s + n.precio, 0);
 
   // Se aplica el mejor descuento disponible; no se acumulan.
