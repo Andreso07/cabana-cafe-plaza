@@ -383,6 +383,19 @@ export async function resumen(): Promise<Resumen> {
   };
 }
 
+/** Reservas activas (confirmadas y apartadas vigentes) cuya llegada es ese día. */
+export async function reservasQueLlegan(fecha: Fecha): Promise<Reserva[]> {
+  const sql = db();
+  const filas = await sql.unsafe<Fila[]>(
+    `select ${COLUMNAS} from reservas
+      where entrada = $1
+        and (estado = 'confirmada' or (estado = 'pendiente' and expira_en > now()))
+      order by creada_en`,
+    [fecha],
+  );
+  return filas.map(aReserva);
+}
+
 /** Reservas que ocupan noches (confirmadas y apartadas vigentes), del último mes en adelante. */
 export async function reservasParaCalendario(): Promise<Reserva[]> {
   const sql = db();

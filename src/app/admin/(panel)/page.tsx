@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BotonConfirmar } from "@/components/BotonConfirmar";
+import type { Config } from "@/config/cabana";
 import { esAdmin } from "@/lib/admin";
-import { diasEntre, formatoLargo, hoyEnColombia } from "@/lib/fechas";
+import { leerConfig } from "@/lib/config";
+import { diasEntre, formatoLargo, hoyEnColombia, sumarDias } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
 import {
   buscarReservas,
   listarBloqueos,
   POR_PAGINA,
+  reservasQueLlegan,
   resumen,
+  type Reserva,
   type EstadoReserva,
   type FiltroReservas,
 } from "@/lib/store";
@@ -26,6 +30,67 @@ const ESTADOS = ["todos", "pendiente", "confirmada", "expirada", "cancelada"] as
 
 const boton = "rounded-full px-3 py-1 text-xs font-extrabold";
 const campo = "rounded-[12px] border-2 border-black/[0.06] bg-white px-3 py-2 text-sm font-semibold";
+
+/** Enlace de WhatsApp al celular del huésped, con el número en formato internacional. */
+function whatsappDe(telefono: string, texto?: string): string {
+  const numero = telefono.replace(/\D/g, "").replace(/^(\d{10})$/, "57$1");
+  return `https://wa.me/${numero}${texto ? `?text=${encodeURIComponent(texto)}` : ""}`;
+}
+
+function recordatorio(r: Reserva, cfg: Config, cuando: "hoy" | "mañana"): string {
+  const nombre = r.nombre.split(" ")[0];
+  const saldo = r.total - r.anticipo;
+  return [
+    `Hola ${nombre} 👋, te escribimos de ${cfg.nombre}.`,
+    `Te recordamos que ${cuando === "hoy" ? "hoy" : "mañana"}, ${formatoLargo(r.entrada)}, te esperamos. La entrada es desde las ${cfg.checkIn} y la salida el ${formatoLargo(r.salida)} hasta las ${cfg.checkOut.replace(/\.$/, "")}.`,
+    r.estado === "pendiente"
+      ? `Aún no hemos confirmado tu pago de ${pesos(r.anticipo)} para separar. Si ya lo hiciste, envíanos el comprobante por aquí.`
+      : saldo > 0
+        ? `El saldo por pagar al llegar es de ${pesos(saldo)}.`
+        : "",
+    `Cómo llegar: ${cfg.comoLlegar}`,
+    cfg.mapsUrl,
+    `Tu código de reserva es ${r.codigo}. ¡Buen viaje!`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function Llegadas({ titulo, cuando, reservas, cfg }: { titulo: string; cuando: "hoy" | "mañana"; reservas: Reserva[]; cfg: Config }) {
+  return (
+    <div className="rounded-[20px] border-[3px] border-black/5 bg-white p-4">
+      <h2 className="font-extrabold">{titulo}</h2>
+      {reservas.length === 0 ? (
+        <p className="mt-1 text-sm font-semibold text-suave">Nadie.</p>
+      ) : (
+        <ul className="mt-2 space-y-3">
+          {reservas.map((r) => {
+            const n = diasEntre(r.entrada, r.salida);
+            return (
+              <li key={r.codigo} className="text-sm">
+                <p className="font-bold">
+                  {r.nombre} · {r.huespedes} pers. · {n} {n === 1 ? "noche" : "noches"}
+                  {r.estado === "pendiente" && <span className={`${boton} ml-2 ${ETIQUETA.pendiente}`}>sin pagar</span>}
+                </p>
+                <p className="text-xs font-semibold text-suave">
+                  {r.codigo} · sale {formatoLargo(r.salida)} · saldo al llegar {pesos(r.total - r.anticipo)}
+                </p>
+                <a
+                  href={whatsappDe(r.telefono, recordatorio(r, cfg, cuando))}
+                  target="_blank"
+                  rel="noopener"
+                  className="mt-1 inline-block rounded-full bg-[#25D366] text-white px-3 py-1.5 text-xs font-extrabold"
+                >
+                  💬 Enviar recordatorio
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function Cifra({ titulo, valor, detalle, tono }: { titulo: string; valor: string; detalle?: string; tono?: string }) {
   return (
@@ -48,12 +113,15 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
   const q = uno(sp.q);
   const pagina = Math.max(1, Number(uno(sp.pagina)) || 1);
 
-  const [cifras, { reservas, total }, bloqueos] = await Promise.all([
+  const hoy = hoyEnColombia();
+  const [cifras, { reservas, total }, bloqueos, lleganHoy, lleganManana, cfg] = await Promise.all([
     resumen(),
     buscarReservas({ vista, estado, q, pagina }),
     listarBloqueos(),
+    reservasQueLlegan(hoy),
+    reservasQueLlegan(sumarDias(hoy, 1)),
+    leerConfig(),
   ]);
-  const hoy = hoyEnColombia();
   const ocupacion = cifras.diasDelMes ? Math.round((cifras.nochesOcupadasMes / cifras.diasDelMes) * 100) : 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   const enlace = (cambios: Record<string, string | number>) => {
@@ -80,6 +148,11 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
           />
           <Cifra titulo="Ventas del mes" valor={pesos(cifras.ingresosMes)} detalle={`Anticipos recibidos: ${pesos(cifras.anticiposMes)}`} />
         </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <Llegadas titulo={`🛎️ Llegan mañana · ${formatoLargo(sumarDias(hoy, 1))}`} cuando="mañana" reservas={lleganManana} cfg={cfg} />
+        <Llegadas titulo={`🏡 Llegan hoy · ${formatoLargo(hoy)}`} cuando="hoy" reservas={lleganHoy} cfg={cfg} />
       </section>
 
       {cifras.conNotas.length > 0 && (
@@ -138,7 +211,7 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
                       <span className="font-bold">{r.nombre}</span> · {r.huespedes} pers.
                       <span className="block text-xs text-suave">CC {r.documento} · {r.email}</span>
                       <a
-                        href={`https://wa.me/${r.telefono.replace(/\D/g, "").replace(/^(\d{10})$/, "57$1")}`}
+                        href={whatsappDe(r.telefono)}
                         target="_blank"
                         rel="noopener"
                         className="text-xs font-bold text-cafe underline"
