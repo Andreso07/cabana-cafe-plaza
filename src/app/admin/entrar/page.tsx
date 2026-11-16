@@ -24,7 +24,11 @@ export default async function Entrar({ searchParams }: PageProps<"/admin/entrar"
               className="mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold outline-none focus:border-teja focus:bg-white"
             />
           </label>
-          {error && <p className="text-sm font-bold text-teja-oscura" role="alert">Clave incorrecta.</p>}
+          {error && (
+            <p className="text-sm font-bold text-teja-oscura" role="alert">
+              {error === "bloqueado" ? "Demasiados intentos. Espera 15 minutos e intenta de nuevo." : "Clave incorrecta."}
+            </p>
+          )}
           <button className="boton-goma font-titulo rounded-full bg-teja text-white font-extrabold py-3">Entrar</button>
         </form>
       </div>

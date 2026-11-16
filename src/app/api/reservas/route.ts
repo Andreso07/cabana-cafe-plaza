@@ -5,6 +5,7 @@ import { diasEntre, esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { cotizar, nocheCerrada } from "@/lib/precios";
 import { eventosExternos, nochesDe } from "@/lib/calendario";
 import { sincronizarDespues } from "@/lib/googleCalendar";
+import { excedeLimite, ipDe } from "@/lib/limite";
 import { crearReserva, FechasNoDisponibles } from "@/lib/store";
 import { wompiConfigurado } from "@/lib/wompi";
 
@@ -50,6 +51,16 @@ export async function POST(req: Request) {
   if (body.aceptaDatos !== true) errores.push("Debes autorizar el tratamiento de datos");
   if (body.aceptaTerminos !== true) errores.push("Debes aceptar las condiciones de reserva");
   if (errores.length) return NextResponse.json({ error: errores.join(". ") }, { status: 400 });
+
+  // Cada reserva sin pagar aparta noches durante horas: sin límite, alguien podría llenar el
+  // calendario de reservas falsas. Seis por hora desde una misma conexión alcanza para un cliente
+  // que se equivoca de fechas y vuelve a empezar.
+  if (excedeLimite(`reserva:${ipDe(req)}`, 6, 60 * 60_000)) {
+    return NextResponse.json(
+      { error: "Hiciste varias reservas seguidas. Si necesitas ayuda, escríbenos por WhatsApp." },
+      { status: 429 },
+    );
+  }
 
   // El precio lo calcula el servidor con la configuración vigente, nunca el navegador.
   const cot = cotizar(entrada as string, salida as string, cfg, huespedes);

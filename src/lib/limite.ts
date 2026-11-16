@@ -16,6 +16,22 @@ export function excedeLimite(clave: string, maximo: number, ventanaMs: number): 
   return false;
 }
 
+/** ¿Ya se llegó a `maximo` intentos registrados en la ventana? No cuenta este. */
+export function bloqueado(clave: string, maximo: number, ventanaMs: number): boolean {
+  const mapa = (g.__limites ??= new Map<string, number[]>());
+  const ahora = Date.now();
+  const recientes = (mapa.get(clave) ?? []).filter((t) => ahora - t < ventanaMs);
+  mapa.set(clave, recientes);
+  return recientes.length >= maximo;
+}
+
+/** Cuenta un intento (por ejemplo, una clave equivocada). */
+export function registrarIntento(clave: string, ventanaMs: number): void {
+  const mapa = (g.__limites ??= new Map<string, number[]>());
+  const ahora = Date.now();
+  mapa.set(clave, [...(mapa.get(clave) ?? []).filter((t) => ahora - t < ventanaMs), ahora]);
+}
+
 export function ipDe(req: Request): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "desconocida";
 }

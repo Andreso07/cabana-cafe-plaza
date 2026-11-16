@@ -322,7 +322,9 @@ export async function buscarReservas(f: FiltroReservas): Promise<{ reservas: Res
   }
   const where = condiciones.length ? `where ${condiciones.join(" and ")}` : "";
   const orden = f.vista === "pasadas" ? "entrada desc" : "entrada asc";
-  const offset = Math.max(0, f.pagina - 1) * POR_PAGINA;
+  // La página viene de la URL: se fuerza a un entero entre 1 y 10.000 antes de llegar al SQL.
+  const pagina = Number.isFinite(f.pagina) ? Math.min(10_000, Math.max(1, Math.floor(f.pagina))) : 1;
+  const offset = (pagina - 1) * POR_PAGINA;
 
   const [filas, [cuenta]] = await Promise.all([
     sql.unsafe<Fila[]>(

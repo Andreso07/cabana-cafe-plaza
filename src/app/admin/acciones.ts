@@ -2,7 +2,9 @@
 // Acciones del panel. Todas exigen sesión de administrador antes de tocar nada.
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { cerrarSesion, claveCorrecta, esAdmin, iniciarSesion } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
@@ -63,7 +65,14 @@ async function guardar(seccion: string, construir: () => Promise<Parameters<type
 // ---------- Sesión ----------
 
 export async function entrar(form: FormData) {
-  if (!claveCorrecta(String(form.get("clave") ?? ""))) redirect("/admin/entrar?error=1");
+  // Sin límite, alguien podría probar miles de claves seguidas.
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "desconocida";
+  if (bloqueado(`entrar:${ip}`, 5, 15 * 60_000)) redirect("/admin/entrar?error=bloqueado");
+  if (!claveCorrecta(String(form.get("clave") ?? ""))) {
+    registrarIntento(`entrar:${ip}`, 15 * 60_000);
+    redirect("/admin/entrar?error=1");
+  }
   await iniciarSesion();
   redirect("/admin");
 }
