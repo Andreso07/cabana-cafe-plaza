@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Baloo_2, Nunito } from "next/font/google";
 import { leerConfig } from "@/lib/config";
@@ -27,9 +28,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-crema/90 border-b border-cafe/10">
           <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-3 flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-2.5 min-w-0">
-              <span className="size-10 shrink-0 rounded-[14px] bg-teja grid place-items-center text-xl shadow-[0_4px_0_var(--teja-oscura)]" aria-hidden>
-                ☕
-              </span>
+              <Image
+                src="/logo.svg"
+                alt=""
+                width={40}
+                height={40}
+                unoptimized
+                priority
+                className="size-10 shrink-0 rounded-[14px] shadow-[0_4px_0_var(--teja-oscura)]"
+              />
               <span className="min-w-0">
                 <span className="block font-titulo font-extrabold text-lg leading-tight text-teja truncate">{cfg.nombre}</span>
                 <span className="block text-[11px] leading-[1.4] font-bold tracking-widest uppercase text-cafe truncate">

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Logo de la Cabaña Café Plaza: la cabaña en A de techo rojo y frente de vidrio, entre montañas y cafetales. -->
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7c26b"/>
+      <stop offset="1" stop-color="#fde9cf"/>
+    </linearGradient>
+    <clipPath id="marco"><rect width="64" height="64" rx="14"/></clipPath>
+  </defs>
+  <g clip-path="url(#marco)">
+    <rect width="64" height="64" fill="url(#cielo)"/>
+    <!-- montañas -->
+    <path d="M0 34 L14 22 L24 29 L38 17 L52 27 L64 21 L64 64 L0 64 Z" fill="#5b7f8e"/>
+    <path d="M0 40 L12 33 L26 38 L40 31 L54 37 L64 33 L64 64 L0 64 Z" fill="#46695a"/>
+    <!-- cabaña: techo rojo en A -->
+    <path d="M32 11 L50 47 L14 47 Z" fill="#c8502f"/>
+    <path d="M32 11 L50 47 L46 47 Z" fill="#8e3318"/>
+    <!-- frente de vidrio -->
+    <path d="M32 21 L42 45 L22 45 Z" fill="#2b2b2b"/>
+    <path d="M32 21 L32 45 M27 33 L37 33 M24.5 39 L39.5 39" stroke="#f7c26b" stroke-width="1.2" stroke-opacity="0.75"/>
+    <!-- terraza -->
+    <rect x="18" y="45" width="28" height="3" rx="1" fill="#a23b22"/>
+    <!-- cafetales -->
+    <path d="M0 52 Q10 46 20 51 Q32 56 44 50 Q54 46 64 51 L64 64 L0 64 Z" fill="#3f6b3a"/>
+    <circle cx="8" cy="51" r="4" fill="#4f8a45"/>
+    <circle cx="56" cy="50" r="4.5" fill="#4f8a45"/>
+    <circle cx="12" cy="49" r="1" fill="#c8502f"/>
+    <circle cx="53" cy="48" r="1" fill="#c8502f"/>
+    <!-- camino -->
+    <path d="M29 48 L35 48 L38 64 L26 64 Z" fill="#e9e2d6"/>
+  </g>
+</svg>
