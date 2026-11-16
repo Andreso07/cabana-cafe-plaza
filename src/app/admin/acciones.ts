@@ -8,6 +8,7 @@ import { cerrarSesion, claveCorrecta, esAdmin, iniciarSesion } from "@/lib/admin
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida } from "@/lib/fechas";
 import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
+import { borrarResena, cambiarEstadoResena, type EstadoResena } from "@/lib/resenas";
 import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
   cancelarReserva,
@@ -120,6 +121,24 @@ export async function guardarTextos(form: FormData) {
     if (!nombre) throw new Invalido("El nombre de la cabaña no puede quedar vacío");
     const mapsUrl = texto(form, "mapsUrl", 500);
     if (mapsUrl && !/^https:\/\//.test(mapsUrl)) throw new Invalido("El enlace de Maps debe empezar por https://");
+    // Cada red solo acepta un enlace de su propio sitio.
+    const red = (campo: string, nombre: string, dominio: RegExp) => {
+      const url = texto(form, campo, 300);
+      if (!url) return "";
+      let u: URL;
+      try {
+        u = new URL(url);
+      } catch {
+        throw new Invalido(`${nombre}: pega el enlace completo, que empiece por https://`);
+      }
+      if (u.protocol !== "https:" || !dominio.test(u.hostname)) throw new Invalido(`${nombre}: el enlace debe ser de ${nombre}`);
+      return u.toString();
+    };
+    const redes = {
+      facebook: red("facebook", "Facebook", /(^|\.)(facebook\.com|fb\.com)$/),
+      instagram: red("instagram", "Instagram", /(^|\.)instagram\.com$/),
+      tiktok: red("tiktok", "TikTok", /(^|\.)tiktok\.com$/),
+    };
     return {
       nombre,
       negocio: texto(form, "negocio", 80),
@@ -134,6 +153,7 @@ export async function guardarTextos(form: FormData) {
       responsable: texto(form, "responsable", 150),
       correoContacto: texto(form, "correoContacto", 120),
       rnt: texto(form, "rnt", 30) || null,
+      redes,
     };
   });
 }
@@ -324,4 +344,23 @@ export async function quitarDescuento(form: FormData) {
     const cfg = await leerConfig();
     return { descuentos: cfg.descuentos.filter((d) => d.id !== id) };
   });
+}
+
+// ---------- Reseñas ----------
+
+/** Aprueba (se publica), oculta o devuelve a pendiente una reseña. */
+export async function moderarResena(form: FormData) {
+  await exigirAdmin();
+  const estado = texto(form, "estado", 12);
+  if (estado !== "aprobada" && estado !== "oculta" && estado !== "pendiente") return;
+  await cambiarEstadoResena(texto(form, "id", 20), estado as EstadoResena);
+  revalidatePath("/admin/resenas");
+  revalidatePath("/");
+}
+
+export async function eliminarResena(form: FormData) {
+  await exigirAdmin();
+  await borrarResena(texto(form, "id", 20));
+  revalidatePath("/admin/resenas");
+  revalidatePath("/");
 }

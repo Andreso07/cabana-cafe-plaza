@@ -422,6 +422,9 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           <Campo nombre="responsable" titulo="Responsable de los datos (nombre y cédula o NIT)" valor={cfg.responsable} ayuda="Aparece en la política de datos (Ley 1581)." />
           <Campo nombre="correoContacto" titulo="Correo de contacto" valor={cfg.correoContacto} type="email" />
           <Campo nombre="rnt" titulo="Número de RNT" valor={cfg.rnt} ayuda="Cuando lo tengas, aparece en el pie de la web." />
+          <Campo nombre="facebook" titulo="Facebook" valor={cfg.redes.facebook} type="url" placeholder="https://www.facebook.com/…" />
+          <Campo nombre="instagram" titulo="Instagram" valor={cfg.redes.instagram} type="url" placeholder="https://www.instagram.com/…" ayuda="Déjalo vacío si no tienes." />
+          <Campo nombre="tiktok" titulo="TikTok" valor={cfg.redes.tiktok} type="url" placeholder="https://www.tiktok.com/@…" ayuda="Déjalo vacío si no tienes." />
           <div className="md:col-span-2"><button className={guardarBtn}>Guardar textos</button></div>
         </form>
       </Tarjeta>

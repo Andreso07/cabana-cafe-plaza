@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Baloo_2, Nunito } from "next/font/google";
+import { ContadorVisitas } from "@/components/ContadorVisitas";
+import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
+import { cifrasVisitas } from "@/lib/resenas";
 import "./globals.css";
 
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
@@ -18,6 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const cfg = await leerConfig();
+  // Si la tabla de visitas falla, el pie se muestra igual: el contador no puede tumbar la web.
+  const visitas = await cifrasVisitas().then((c) => c.total).catch(() => 0);
   const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
     `Hola, quiero información sobre ${cfg.nombre}`,
   )}`;
@@ -64,13 +69,19 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <p className="font-semibold">
               {cfg.nombre} · {cfg.negocio} · {cfg.vereda}, {cfg.municipio}, {cfg.departamento}
               {cfg.rnt && <> · RNT {cfg.rnt}</>}
+              <span className="block mt-1 text-xs">
+                👀 {visitas.toLocaleString("es-CO")} {visitas === 1 ? "visita" : "visitas"}
+              </span>
             </p>
-            <nav className="flex gap-4 font-semibold">
+            <nav className="flex flex-wrap items-center gap-4 font-semibold">
+              <Link href="/resena" className="hover:underline">Deja tu reseña</Link>
               <Link href="/condiciones" className="hover:underline">Condiciones de reserva</Link>
               <Link href="/privacidad" className="hover:underline">Tratamiento de datos</Link>
+              <Redes redes={cfg.redes} />
             </nav>
           </div>
         </footer>
+        <ContadorVisitas />
       </body>
     </html>
   );

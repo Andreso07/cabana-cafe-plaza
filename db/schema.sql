@@ -59,9 +59,30 @@ create table if not exists configuracion (
   actualizado_en timestamptz not null default now()
 );
 
+-- Reseñas de los huéspedes. Entran como 'pendiente' y solo se publican las que el dueño
+-- aprueba en el panel (para frenar spam e insultos, no para esconder críticas).
+create table if not exists resenas (
+  id           bigint generated always as identity primary key,
+  nombre       text not null,
+  calificacion smallint not null check (calificacion between 1 and 5),
+  comentario   text not null,
+  codigo       text,                    -- código de reserva, si lo escribió
+  estado       text not null default 'pendiente' check (estado in ('pendiente', 'aprobada', 'oculta')),
+  creada_en    timestamptz not null default now()
+);
+create index if not exists resenas_estado_idx on resenas (estado, creada_en desc);
+
+-- Visitas a la web, una fila por día. Las cuenta el navegador una vez por sesión.
+create table if not exists visitas (
+  dia   date primary key,
+  total integer not null default 0
+);
+
 -- Supabase publica las tablas de "public" en su API REST. Con RLS activo y sin
 -- políticas, esa API no puede leer ni escribir nada: solo la web, que entra con
 -- la conexión directa a la base, ve los datos de los huéspedes.
 alter table reservas enable row level security;
 alter table bloqueos enable row level security;
 alter table configuracion enable row level security;
+alter table resenas enable row level security;
+alter table visitas enable row level security;

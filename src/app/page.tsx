@@ -1,9 +1,12 @@
 import Image from "next/image";
 import { BotonPlan } from "@/components/BotonPlan";
 import { ProveedorReserva } from "@/components/EstadoReserva";
+import { FormularioResena } from "@/components/FormularioResena";
+import { Redes } from "@/components/Redes";
 import { Reservar } from "@/components/Reservar";
 import { leerConfig } from "@/lib/config";
 import { pesos } from "@/lib/precios";
+import { nombrePublico, resenasPublicas } from "@/lib/resenas";
 import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
 
@@ -24,7 +27,11 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
 }
 
 export default async function Inicio() {
-  const cfg = await leerConfig();
+  const [cfg, opiniones] = await Promise.all([
+    leerConfig(),
+    // Si las reseñas fallan, la página se muestra igual, sin esa sección llena.
+    resenasPublicas(6).catch(() => ({ resenas: [], promedio: null, total: 0 })),
+  ]);
 
 
   // Los planes se editan en el panel (Configuración → Planes).
@@ -198,6 +205,54 @@ export default async function Inicio() {
             </p>
           )}
         </div>
+      </section>
+
+      {/* Reseñas */}
+      <section id="resenas" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+        <div className="text-center max-w-[640px] mx-auto">
+          <Etiqueta tono="suave">⭐ Huéspedes felices</Etiqueta>
+          <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Lo que dicen de nosotros</h2>
+          {opiniones.promedio !== null && (
+            <p className="mt-3 font-extrabold">
+              <span className="text-sol text-xl tracking-wider" aria-hidden>{"★".repeat(Math.round(opiniones.promedio))}</span>{" "}
+              {opiniones.promedio.toLocaleString("es-CO")} de 5 · {opiniones.total} {opiniones.total === 1 ? "reseña" : "reseñas"}
+            </p>
+          )}
+        </div>
+        <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_380px] items-start">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {opiniones.resenas.length === 0 && (
+              <p className="sm:col-span-2 rounded-[20px] border-2 border-dashed border-black/10 p-6 text-center font-semibold text-suave">
+                Aún no hay reseñas publicadas. ¿Ya nos visitaste? Sé el primero en contarnos cómo te fue.
+              </p>
+            )}
+            {opiniones.resenas.map((r) => (
+              <figure key={r.id} className="rounded-[20px] border-[3px] border-black/5 bg-white p-5">
+                <p className="text-sol text-lg tracking-wider" aria-label={`${r.calificacion} de 5 estrellas`}>
+                  {"★".repeat(r.calificacion)}
+                  <span className="text-black/10">{"★".repeat(5 - r.calificacion)}</span>
+                </p>
+                <blockquote className="mt-2 text-sm font-semibold text-tinta/80">“{r.comentario}”</blockquote>
+                <figcaption className="mt-3 text-xs font-extrabold text-suave">
+                  {nombrePublico(r.nombre)} ·{" "}
+                  {new Date(r.creadaEn).toLocaleDateString("es-CO", { month: "long", year: "numeric", timeZone: "America/Bogota" })}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+          <div className="rounded-[28px] border-[3px] border-teja bg-white p-5 sm:p-6 shadow-[0_12px_0_var(--teja)]">
+            <p className="text-[11px] font-black tracking-widest text-teja/70">DEJA TU RESEÑA</p>
+            <div className="mt-3">
+              <FormularioResena />
+            </div>
+          </div>
+        </div>
+        {(cfg.redes.facebook || cfg.redes.instagram || cfg.redes.tiktok) && (
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3 font-extrabold">
+            <span>Síguenos y mira más fotos</span>
+            <Redes redes={cfg.redes} grande />
+          </div>
+        )}
       </section>
 
       {/* Antes de venir */}

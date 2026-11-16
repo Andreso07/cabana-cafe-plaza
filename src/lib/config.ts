@@ -17,6 +17,7 @@ export const leerConfig = cache(async (): Promise<Config> => {
     ...guardada,
     precios: { ...CONFIG_INICIAL.precios, ...(guardada.precios ?? {}) },
     preciosGrupo: { ...CONFIG_INICIAL.preciosGrupo, ...(guardada.preciosGrupo ?? {}) },
+    redes: { ...CONFIG_INICIAL.redes, ...(guardada.redes ?? {}) },
   };
 });
 

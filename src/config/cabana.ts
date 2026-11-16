@@ -57,6 +57,8 @@ export type Config = {
   // Responsable de los datos personales (Ley 1581): nombre o razón social y cédula o NIT.
   responsable: string;
   correoContacto: string;
+  // Enlaces a redes sociales; vacío = no se muestra.
+  redes: { facebook: string; instagram: string; tiktok: string };
 
   heroTitulo: string;
   heroDestacado: string;
@@ -118,6 +120,7 @@ export const CONFIG_INICIAL: Config = {
   rnt: null,
   responsable: "",
   correoContacto: "",
+  redes: { facebook: "https://www.facebook.com/profile.php?id=61575125516262", instagram: "", tiktok: "" },
 
   heroTitulo: "Despierta entre",
   heroDestacado: "cafetales y montañas",
