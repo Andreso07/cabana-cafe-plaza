@@ -9,7 +9,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const COOKIE = "admin_sesion";
-export const INACTIVIDAD_MIN = 5;
+export const INACTIVIDAD_MIN = 30;
 export const MAXIMO_HORAS = 1;
 const INACTIVIDAD_MS = INACTIVIDAD_MIN * 60_000;
 const MAXIMO_MS = MAXIMO_HORAS * 3_600_000;
