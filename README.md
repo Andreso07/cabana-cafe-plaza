@@ -20,8 +20,8 @@ npm install
 npm run dev
 ```
 
-Abre http://localhost:3000. El panel está en http://localhost:3000/admin; la clave es
-`ADMIN_PASSWORD` de `.env.local`.
+Abre http://localhost:3000. El panel está en http://localhost:3000/admin; el usuario es
+`ADMIN_USUARIO` y la clave `ADMIN_PASSWORD`, los dos de `.env.local` (y en Vercel, en producción).
 
 Sin llaves de Wompi la web funciona en **modo simulado**: al reservar aparece un botón
 "Simular pago aprobado" para probar el flujo completo sin cobrar.

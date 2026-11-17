@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
-import { cerrarSesion, claveCorrecta, esAdmin, iniciarSesion } from "@/lib/admin";
+import { cerrarSesion, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida } from "@/lib/fechas";
 import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
@@ -69,7 +69,10 @@ export async function entrar(form: FormData) {
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "desconocida";
   if (bloqueado(`entrar:${ip}`, 5, 15 * 60_000)) redirect("/admin/entrar?error=bloqueado");
-  if (!claveCorrecta(String(form.get("clave") ?? ""))) {
+  if (!usuarioConfigurado()) redirect("/admin/entrar?error=sin-usuario");
+  const usuario = String(form.get("usuario") ?? "").slice(0, 100);
+  const clave = String(form.get("clave") ?? "").slice(0, 200);
+  if (!credencialesCorrectas(usuario, clave)) {
     registrarIntento(`entrar:${ip}`, 15 * 60_000);
     redirect("/admin/entrar?error=1");
   }

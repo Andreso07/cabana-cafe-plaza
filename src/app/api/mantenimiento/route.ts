@@ -10,7 +10,8 @@ import { sincronizarDespues } from "@/lib/googleCalendar";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [{ reservas }] = await db()<{ reservas: number }[]>`select count(*)::int as reservas from reservas`;
+  // Basta con que la base conteste; no se devuelve cuántas reservas hay (es pública).
+  await db()`select 1`;
   sincronizarDespues(10);
-  return NextResponse.json({ ok: true, reservas, en: new Date().toISOString() });
+  return NextResponse.json({ ok: true, en: new Date().toISOString() });
 }
