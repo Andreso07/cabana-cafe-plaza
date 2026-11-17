@@ -26,7 +26,11 @@ export default async function Entrar({ searchParams }: PageProps<"/admin/entrar"
           </label>
           {error && (
             <p className="text-sm font-bold text-teja-oscura" role="alert">
-              {error === "bloqueado" ? "Demasiados intentos. Espera 15 minutos e intenta de nuevo." : "Clave incorrecta."}
+              {error === "bloqueado"
+                ? "Demasiados intentos. Espera 15 minutos e intenta de nuevo."
+                : error === "inactividad"
+                  ? "Se cerró la sesión por inactividad. Vuelve a escribir la clave."
+                  : "Clave incorrecta."}
             </p>
           )}
           <button className="boton-goma font-titulo rounded-full bg-teja text-white font-extrabold py-3">Entrar</button>

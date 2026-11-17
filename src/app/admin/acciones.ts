@@ -82,6 +82,11 @@ export async function salir() {
   redirect("/admin/entrar");
 }
 
+export async function salirPorInactividad() {
+  await cerrarSesion();
+  redirect("/admin/entrar?error=inactividad");
+}
+
 // ---------- Reservas ----------
 
 export async function marcarPagada(form: FormData) {
