@@ -5,8 +5,9 @@ import { diasEntre, esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { cotizar, nocheCerrada } from "@/lib/precios";
 import { eventosExternos, nochesDe } from "@/lib/calendario";
 import { sincronizarDespues } from "@/lib/googleCalendar";
-import { excedeLimite, ipDe } from "@/lib/limite";
-import { crearReserva, FechasNoDisponibles } from "@/lib/store";
+import { validarCodigo } from "@/lib/codigos";
+import { bloqueado, excedeLimite, ipDe, registrarIntento } from "@/lib/limite";
+import { CodigoNoValido, crearReserva, FechasNoDisponibles } from "@/lib/store";
 import { wompiConfigurado } from "@/lib/wompi";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,8 +63,24 @@ export async function POST(req: Request) {
     );
   }
 
+  // Código de colaborador (opcional). Los errores cuentan para el mismo límite de /api/codigo,
+  // para que no sirva como otra puerta para adivinar códigos.
+  let codigo = null;
+  if (typeof body.codigo === "string" && body.codigo.trim()) {
+    const clave = `codigo:${ipDe(req)}`;
+    if (bloqueado(clave, 10, 15 * 60_000)) {
+      return NextResponse.json({ error: "Demasiados intentos con el código. Espera unos minutos." }, { status: 429 });
+    }
+    const v = await validarCodigo(body.codigo);
+    if (!v.ok) {
+      registrarIntento(clave, 15 * 60_000);
+      return NextResponse.json({ error: `${v.error} Quítalo o escribe otro.` }, { status: 400 });
+    }
+    codigo = v.codigo;
+  }
+
   // El precio lo calcula el servidor con la configuración vigente, nunca el navegador.
-  const cot = cotizar(entrada as string, salida as string, cfg, huespedes);
+  const cot = cotizar(entrada as string, salida as string, cfg, huespedes, codigo);
   if (cot.noches.some((n) => nocheCerrada(n.fecha, cfg))) {
     return NextResponse.json({ error: "Los lunes no hay servicio, salvo que sean festivos. Elige otras fechas." }, { status: 400 });
   }
@@ -97,12 +114,17 @@ export async function POST(req: Request) {
         anticipo: cot.anticipo,
         descuento: cot.descuento?.valor ?? 0,
         descuentoNombre: cot.descuento?.nombre,
+        // Se anota aunque otro descuento haya rebajado más: el cliente llegó por ese colaborador.
+        ...(codigo ? { codigoDescuento: codigo.codigo } : {}),
       },
       wompiConfigurado() ? LIMITES.minutosApartadoWompi : cfg.horasApartado * 60,
     );
     sincronizarDespues();
     return NextResponse.json({ codigo: reserva.codigo }, { status: 201 });
   } catch (e) {
+    if (e instanceof CodigoNoValido) {
+      return NextResponse.json({ error: `${e.message} Quítalo o escribe otro.` }, { status: 400 });
+    }
     if (e instanceof FechasNoDisponibles) {
       return NextResponse.json(
         { error: "Alguien acaba de reservar esas fechas. Elige otras, por favor." },

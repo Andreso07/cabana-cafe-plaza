@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LIMITES } from "@/config/cabana";
 import { formatoLargo, sumarDias } from "@/lib/fechas";
-import { cotizar, pesos, type ConfigPrecios } from "@/lib/precios";
+import { cotizar, pesos, type CodigoAplicable, type ConfigPrecios } from "@/lib/precios";
 import { Calendario } from "./Calendario";
 import { useReserva } from "./EstadoReserva";
 
@@ -29,7 +29,53 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const cot = entrada && salida ? cotizar(entrada, salida, cfg, huespedes) : null;
+  // Código de colaborador: el servidor dice si vale y cuánto; aquí solo se muestra el precio.
+  const [abrirCodigo, setAbrirCodigo] = useState(false);
+  const [textoCodigo, setTextoCodigo] = useState("");
+  const [codigo, setCodigo] = useState<CodigoAplicable | null>(null);
+  const [errorCodigo, setErrorCodigo] = useState<string | null>(null);
+  const [validando, setValidando] = useState(false);
+
+  async function aplicarCodigo(texto: string) {
+    const limpio = texto.trim();
+    if (!limpio) return;
+    setValidando(true);
+    setErrorCodigo(null);
+    try {
+      const r = await fetch("/api/codigo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: limpio }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) {
+        setCodigo(j as CodigoAplicable);
+        setTextoCodigo((j as CodigoAplicable).codigo);
+      } else {
+        setCodigo(null);
+        setErrorCodigo(j.error ?? "No se pudo revisar el código.");
+      }
+    } catch {
+      setErrorCodigo("No hay conexión. Revisa tu internet e intenta de nuevo.");
+    } finally {
+      setValidando(false);
+    }
+  }
+
+  // Enlace de colaborador: cabana…/?codigo=LAURA10 deja el código puesto.
+  useEffect(() => {
+    const deLaDireccion = new URLSearchParams(window.location.search).get("codigo");
+    if (deLaDireccion) {
+      // La dirección solo existe en el navegador: leerla al renderizar no coincidiría con el HTML
+      // del servidor. Se lee una vez al montar.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAbrirCodigo(true);
+      setTextoCodigo(deLaDireccion.toUpperCase().slice(0, 20));
+      void aplicarCodigo(deLaDireccion);
+    }
+  }, []);
+
+  const cot = entrada && salida ? cotizar(entrada, salida, cfg, huespedes, codigo) : null;
   const muyCorta = cot ? cot.noches.length < cot.minNoches : false;
   const desde = Math.min(cfg.precios.semana, cfg.precios.viernes, cfg.precios.finDeSemana);
 
@@ -47,6 +93,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
           entrada,
           salida,
           huespedes,
+          ...(codigo ? { codigo: codigo.codigo } : {}),
           nombre: f.get("nombre"),
           documento: f.get("documento"),
           email: f.get("email"),
@@ -150,6 +197,58 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
                 Hasta {cfg.personasPrecioBase} personas, precio de pareja; desde {cfg.personasPrecioBase + 1}, precio de grupo.
               </span>
             </label>
+            <div className="text-sm">
+              {!abrirCodigo ? (
+                <button type="button" onClick={() => setAbrirCodigo(true)} className="text-xs font-bold text-suave underline">
+                  ¿Tienes un código de descuento?
+                </button>
+              ) : codigo ? (
+                <p className="flex items-center justify-between gap-2 rounded-[14px] bg-libre border-2 border-libre-borde px-3 py-2 text-xs font-bold">
+                  <span>✅ Código <strong>{codigo.codigo}</strong>: −{codigo.porcentaje}%</span>
+                  <button
+                    type="button"
+                    className="underline text-suave"
+                    onClick={() => {
+                      setCodigo(null);
+                      setTextoCodigo("");
+                    }}
+                  >
+                    Quitar
+                  </button>
+                </p>
+              ) : (
+                <div>
+                  <span className="text-xs font-bold">Código de descuento</span>
+                  <div className="mt-1 flex gap-2">
+                    <input
+                      value={textoCodigo}
+                      onChange={(e) => setTextoCodigo(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void aplicarCodigo(textoCodigo);
+                        }
+                      }}
+                      maxLength={20}
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      placeholder="Ej. LAURA10"
+                      aria-label="Código de descuento"
+                      className={`${campo} mt-0 uppercase`}
+                    />
+                    <button
+                      type="button"
+                      disabled={validando || !textoCodigo.trim()}
+                      onClick={() => void aplicarCodigo(textoCodigo)}
+                      className="shrink-0 rounded-full bg-tinta text-white text-xs font-extrabold px-4 disabled:opacity-50"
+                    >
+                      {validando ? "…" : "Aplicar"}
+                    </button>
+                  </div>
+                  {errorCodigo && <p className="mt-1 text-xs font-bold text-teja-oscura" role="alert">{errorCodigo}</p>}
+                </div>
+              )}
+            </div>
             <ul className="text-sm font-semibold bg-crema rounded-[16px] border-2 border-dashed border-teja/20 px-3 py-2">
               {cot.noches.map((n) => (
                 <li key={n.fecha} className="flex justify-between gap-2">
@@ -172,8 +271,12 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
                     <span>🎁 {cot.descuento.nombre} (−{cot.descuento.porcentaje}%)</span>
                     <span>−{pesos(cot.descuento.valor)}</span>
                   </p>
+                  {cot.codigoParcial && (
+                    <p className="text-xs text-suave">El código no aplica en puentes, fechas especiales ni festivos.</p>
+                  )}
                 </>
               )}
+              {cot.codigoSinEfecto && <p className="text-xs font-semibold text-suave">ℹ️ {cot.codigoSinEfecto}</p>}
               <p className="flex justify-between font-bold">
                 <span>Total ({cot.noches.length} {cot.noches.length === 1 ? "noche" : "noches"})</span>
                 <span>{pesos(cot.total)}</span>

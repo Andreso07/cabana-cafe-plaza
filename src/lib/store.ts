@@ -7,6 +7,7 @@
 //     se escape del código.
 import { randomBytes } from "node:crypto";
 import type { Fecha } from "./fechas";
+import { validarCodigo } from "./codigos";
 import { db } from "./db";
 
 export type EstadoReserva = "pendiente" | "confirmada" | "cancelada" | "expirada";
@@ -24,6 +25,8 @@ export type Reserva = {
   anticipo: number;
   descuento: number;
   descuentoNombre?: string;
+  /** Código de colaborador con el que se reservó (p. ej. LAURA10). */
+  codigoDescuento?: string;
   estado: EstadoReserva;
   creadaEn: string;
   expiraEn: string;
@@ -50,6 +53,7 @@ type Fila = {
   anticipo: number;
   descuento: number;
   descuento_nombre: string | null;
+  codigo_descuento: string | null;
   estado: EstadoReserva;
   creada_en: Date;
   expira_en: Date;
@@ -64,7 +68,7 @@ type Fila = {
 // Una pendiente vencida se lee como expirada aunque nadie la haya actualizado todavía.
 const COLUMNAS = `
   codigo, entrada::text as entrada, salida::text as salida, huespedes, nombre, documento,
-  email, telefono, total, anticipo, descuento, descuento_nombre,
+  email, telefono, total, anticipo, descuento, descuento_nombre, codigo_descuento,
   case when estado = 'pendiente' and expira_en <= now() then 'expirada' else estado end as estado,
   creada_en, expira_en, pago_proveedor, pago_id, pago_fecha, pago_reportado, pago_reportado_en, notas`;
 
@@ -82,6 +86,7 @@ function aReserva(f: Fila): Reserva {
     anticipo: f.anticipo,
     descuento: f.descuento,
     ...(f.descuento_nombre ? { descuentoNombre: f.descuento_nombre } : {}),
+    ...(f.codigo_descuento ? { codigoDescuento: f.codigo_descuento } : {}),
     estado: f.estado,
     creadaEn: f.creada_en.toISOString(),
     expiraEn: f.expira_en.toISOString(),
@@ -125,6 +130,9 @@ export class FechasNoDisponibles extends Error {
   }
 }
 
+/** El código de colaborador dejó de servir entre la cotización y la reserva (p. ej. se agotó). */
+export class CodigoNoValido extends Error {}
+
 export async function crearReserva(
   d: Omit<Reserva, "codigo" | "estado" | "creadaEn" | "expiraEn" | "pago" | "notas">,
   minutosApartado: number,
@@ -146,14 +154,22 @@ export async function crearReserva(
         limit 1`;
       if (choque) throw new FechasNoDisponibles();
 
+      // El límite de usos del código se comprueba aquí, bajo el candado: dos reservas que llegan a
+      // la vez con el último uso no pueden pasar las dos.
+      if (d.codigoDescuento) {
+        const v = await validarCodigo(d.codigoDescuento, tx);
+        if (!v.ok) throw new CodigoNoValido(v.error);
+      }
+
       const [fila] = await tx.unsafe<Fila[]>(
         `insert into reservas (codigo, entrada, salida, huespedes, nombre, documento, email,
-                               telefono, total, anticipo, descuento, descuento_nombre, expira_en)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now() + make_interval(mins => $13))
+                               telefono, total, anticipo, descuento, descuento_nombre, codigo_descuento, expira_en)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now() + make_interval(mins => $14))
          returning ${COLUMNAS}`,
         [
           nuevoCodigo(), d.entrada, d.salida, d.huespedes, d.nombre, d.documento, d.email,
-          d.telefono, d.total, d.anticipo, d.descuento, d.descuentoNombre ?? null, minutosApartado,
+          d.telefono, d.total, d.anticipo, d.descuento, d.descuentoNombre ?? null, d.codigoDescuento ?? null,
+          minutosApartado,
         ],
       );
       return aReserva(fila);
@@ -318,7 +334,7 @@ export async function buscarReservas(f: FiltroReservas): Promise<{ reservas: Res
   if (q) {
     params.push(`%${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`);
     const p = `$${params.length}`;
-    condiciones.push(`(nombre ilike ${p} or documento ilike ${p} or codigo ilike ${p} or telefono ilike ${p} or email ilike ${p})`);
+    condiciones.push(`(nombre ilike ${p} or documento ilike ${p} or codigo ilike ${p} or telefono ilike ${p} or email ilike ${p} or codigo_descuento ilike ${p})`);
   }
   const where = condiciones.length ? `where ${condiciones.join(" and ")}` : "";
   const orden = f.vista === "pasadas" ? "entrada desc" : "entrada asc";

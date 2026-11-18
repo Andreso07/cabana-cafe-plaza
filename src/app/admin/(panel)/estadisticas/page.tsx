@@ -3,6 +3,7 @@ import { GraficaBarras } from "@/components/GraficaBarras";
 import { esAdmin } from "@/lib/admin";
 import { cifrasPorMes, nochesPorDiaSemana, reservasCreadas30, visitasPorDia } from "@/lib/estadisticas";
 import { pesos } from "@/lib/precios";
+import { listarCodigos } from "@/lib/codigos";
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MESES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -25,7 +26,14 @@ function Cifra({ titulo, valor, detalle }: { titulo: string; valor: string; deta
 export default async function Estadisticas() {
   // Ver la nota en ../page.tsx: layout y página corren en paralelo.
   if (!(await esAdmin())) redirect("/admin/entrar");
-  const [dias, meses, semana, creadas] = await Promise.all([visitasPorDia(30), cifrasPorMes(), nochesPorDiaSemana(), reservasCreadas30()]);
+  const [dias, meses, semana, creadas, codigos] = await Promise.all([
+    visitasPorDia(30),
+    cifrasPorMes(),
+    nochesPorDiaSemana(),
+    reservasCreadas30(),
+    listarCodigos(),
+  ]);
+  const colaboradores = [...codigos].sort((a, b) => b.vendido - a.vendido || b.usos - a.usos);
 
   const visitas30 = dias.reduce((s, d) => s + d.visitas, 0);
   const conversion = visitas30 ? (creadas / visitas30) * 100 : 0;
@@ -109,6 +117,43 @@ export default async function Estadisticas() {
           }))}
           nota="Si entre semana casi no se vende, un plan o descuento de martes a jueves puede llenar esas noches."
         />
+      </section>
+
+      <section className="rounded-[24px] border-[3px] border-black/5 bg-white p-4 sm:p-5">
+        <h3 className="font-titulo text-lg font-extrabold leading-tight">Colaboradores</h3>
+        <p className="text-xs font-semibold text-suave">
+          Reservas hechas con el código de cada uno, desde que se creó. «Vendido» suma solo las pagadas.
+        </p>
+        {colaboradores.length === 0 ? (
+          <p className="mt-3 text-sm text-suave">
+            Todavía no hay códigos. Créalos en Configuración → Códigos de colaboradores.
+          </p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-suave border-b border-black/10">
+                  <th className="py-1.5 pr-3 font-bold">Código</th>
+                  <th className="py-1.5 pr-3 font-bold">Colaborador</th>
+                  <th className="py-1.5 pr-3 font-bold text-right">Pagadas</th>
+                  <th className="py-1.5 pr-3 font-bold text-right">Por pagar</th>
+                  <th className="py-1.5 font-bold text-right">Vendido</th>
+                </tr>
+              </thead>
+              <tbody>
+                {colaboradores.map((c) => (
+                  <tr key={c.codigo} className="border-b border-black/5">
+                    <td className="py-1.5 pr-3 font-mono font-bold">{c.codigo}</td>
+                    <td className="py-1.5 pr-3 font-semibold">{c.colaborador}</td>
+                    <td className="py-1.5 pr-3 text-right font-bold">{c.confirmadas}</td>
+                    <td className="py-1.5 pr-3 text-right text-suave">{c.usos - c.confirmadas}</td>
+                    <td className="py-1.5 text-right font-bold">{pesos(c.vendido)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </main>
   );

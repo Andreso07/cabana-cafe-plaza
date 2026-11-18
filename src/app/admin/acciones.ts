@@ -8,9 +8,10 @@ import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { cerrarSesion, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
-import { esFechaValida } from "@/lib/fechas";
+import { esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
 import { borrarResena, cambiarEstadoResena, type EstadoResena } from "@/lib/resenas";
+import { alternarCodigo, borrarCodigo, CodigoYaExiste, crearCodigo, normalizarCodigo } from "@/lib/codigos";
 import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
   cancelarReserva,
@@ -380,4 +381,42 @@ export async function eliminarResena(form: FormData) {
   await borrarResena(texto(form, "id", 20));
   revalidatePath("/admin/resenas");
   revalidatePath("/");
+}
+
+// ---------- Códigos de colaboradores ----------
+
+async function cambiarCodigos(accion: () => Promise<void>) {
+  await exigirAdmin();
+  try {
+    await accion();
+  } catch (e) {
+    if (e instanceof Invalido || e instanceof CodigoYaExiste) {
+      redirect(`${CONFIG}?error=${encodeURIComponent(e.message)}#codigos`);
+    }
+    throw e;
+  }
+  revalidatePath(CONFIG);
+  redirect(`${CONFIG}?ok=codigos#codigos`);
+}
+
+export async function agregarCodigo(form: FormData) {
+  await cambiarCodigos(async () => {
+    const codigo = normalizarCodigo(texto(form, "codigo", 40));
+    if (!codigo) throw new Invalido("El código debe tener de 3 a 20 letras, números o guiones (sin tildes ni espacios)");
+    const colaborador = texto(form, "colaborador", 60);
+    if (colaborador.length < 2) throw new Invalido("Escribe el nombre del colaborador");
+    const porcentaje = numero(form, "porcentaje", "Porcentaje", 1, 50);
+    const vence = texto(form, "vence", 10) || null;
+    if (vence && (!esFechaValida(vence) || vence < hoyEnColombia())) throw new Invalido("La fecha de vencimiento debe ser hoy o después");
+    const maxUsos = texto(form, "maxUsos", 10) ? numero(form, "maxUsos", "Máximo de usos", 1, 1000) : null;
+    await crearCodigo({ codigo, colaborador, porcentaje, vence, maxUsos });
+  });
+}
+
+export async function pausarCodigo(form: FormData) {
+  await cambiarCodigos(() => alternarCodigo(normalizarCodigo(texto(form, "codigo", 20))));
+}
+
+export async function eliminarCodigo(form: FormData) {
+  await cambiarCodigos(() => borrarCodigo(normalizarCodigo(texto(form, "codigo", 20))));
 }

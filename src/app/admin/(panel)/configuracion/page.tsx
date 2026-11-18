@@ -8,7 +8,9 @@ import { googleConfigurado } from "@/lib/googleCalendar";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
+import { listarCodigos } from "@/lib/codigos";
 import {
+  agregarCodigo,
   agregarDescuento,
   agregarFechaEspecial,
   alternarDescuento,
@@ -17,6 +19,8 @@ import {
   guardarPlanes,
   guardarPrecios,
   guardarTextos,
+  eliminarCodigo,
+  pausarCodigo,
   quitarDescuento,
   nuevoEnlaceCalendario,
   quitarFechaEspecial,
@@ -36,6 +40,7 @@ const NOMBRES: Record<string, string> = {
   listas: "Servicios y reglas",
   fechas: "Fechas especiales",
   descuentos: "Descuentos",
+  codigos: "Códigos de colaboradores",
 };
 
 function Tarjeta({ id, titulo, ayuda, children }: { id: string; titulo: string; ayuda?: string; children: React.ReactNode }) {
@@ -67,7 +72,7 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
   const ok = typeof sp.ok === "string" ? sp.ok : null;
   const error = typeof sp.error === "string" ? sp.error : null;
   const sync = typeof sp.sync === "string" && /^\d+-\d+-\d+$/.test(sp.sync) ? sp.sync.split("-") : null;
-  const [cfg, externo] = await Promise.all([leerConfig(), eventosExternos()]);
+  const [cfg, externo, codigos] = await Promise.all([leerConfig(), eventosExternos(), listarCodigos()]);
   const hoy = hoyEnColombia();
   const h = await headers();
   const origen = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
@@ -400,6 +405,64 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           <Campo nombre="desde" titulo="Llegando desde" valor="" type="date" ayuda="Solo para «por fechas»." />
           <Campo nombre="hasta" titulo="Llegando hasta" valor="" type="date" />
           <div className="md:col-span-3"><button className={guardarBtn}>Agregar descuento</button></div>
+        </form>
+      </Tarjeta>
+
+      <Tarjeta
+        id="codigos"
+        titulo="Códigos de colaboradores"
+        ayuda="Cada colaborador comparte su código o su enlace. No aplica en puentes, fechas especiales ni festivos, y no se suma con los descuentos de arriba: se usa el que rebaje más."
+      >
+        <ul className="space-y-3 text-sm font-semibold mb-5">
+          {codigos.length === 0 && <li className="text-suave">Todavía no hay códigos.</li>}
+          {codigos.map((c) => {
+            const vencido = c.vence !== null && c.vence < hoy;
+            const agotado = c.maxUsos !== null && c.usos >= c.maxUsos;
+            const estado = !c.activo ? "pausado" : vencido ? "vencido" : agotado ? "agotado" : "activo";
+            const enlace = `${origen}/?codigo=${c.codigo}#reservar`;
+            return (
+              <li key={c.codigo} className="rounded-[16px] border-2 border-black/5 px-3 py-2.5">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 items-center">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${estado === "activo" ? "bg-cafe/15 text-cafe" : "bg-black/5 text-black/40"}`}>
+                    {estado}
+                  </span>
+                  <strong className="font-mono tracking-wide">{c.codigo}</strong>
+                  <span>−{c.porcentaje}% · {c.colaborador}</span>
+                  <span className="text-suave">
+                    {c.vence ? `vence ${formatoLargo(c.vence)}` : "sin vencimiento"}
+                    {c.maxUsos !== null && ` · ${c.usos} de ${c.maxUsos} usos`}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-suave">
+                  {c.confirmadas} {c.confirmadas === 1 ? "reserva pagada" : "reservas pagadas"} · {pesos(c.vendido)} vendidos
+                  {c.usos > c.confirmadas && ` · ${c.usos - c.confirmadas} por pagar`}
+                </p>
+                <p className="mt-1 text-xs break-all">
+                  Enlace para compartir: <span className="font-mono select-all">{enlace}</span>
+                </p>
+                <div className="mt-1 flex gap-3">
+                  <form action={pausarCodigo}>
+                    <input type="hidden" name="codigo" value={c.codigo} />
+                    <button className="text-xs underline text-suave">{c.activo ? "Pausar" : "Activar"}</button>
+                  </form>
+                  <form action={eliminarCodigo}>
+                    <input type="hidden" name="codigo" value={c.codigo} />
+                    <BotonConfirmar pregunta={`¿Borrar el código «${c.codigo}»? Las reservas que lo usaron lo conservan.`} className="text-xs underline text-suave">
+                      Borrar
+                    </BotonConfirmar>
+                  </form>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <form action={agregarCodigo} className="grid gap-3 md:grid-cols-3 items-end">
+          <Campo nombre="codigo" titulo="Código" valor="" placeholder="LAURA10" required maxLength={20} ayuda="Letras, números y guiones." />
+          <Campo nombre="colaborador" titulo="Colaborador" valor="" placeholder="Laura (Instagram)" required maxLength={60} />
+          <Campo nombre="porcentaje" titulo="% de descuento" valor="10" inputMode="numeric" required />
+          <Campo nombre="vence" titulo="Vence (incluido)" valor="" type="date" min={hoy} ayuda="Vacío: no vence." />
+          <Campo nombre="maxUsos" titulo="Máximo de reservas" valor="" inputMode="numeric" placeholder="Sin límite" ayuda="Cuentan las pagadas y las que apartan fechas." />
+          <div><button className={guardarBtn}>Crear código</button></div>
         </form>
       </Tarjeta>
 

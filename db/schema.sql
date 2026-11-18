@@ -86,3 +86,20 @@ alter table bloqueos enable row level security;
 alter table configuracion enable row level security;
 alter table resenas enable row level security;
 alter table visitas enable row level security;
+
+-- Códigos de descuento para colaboradores (p. ej. LAURA10). La lista vive en su propia tabla, no en
+-- `configuracion`, porque parte de la configuración viaja al navegador y los códigos no deben verse.
+create table if not exists codigos_descuento (
+  codigo      text primary key check (codigo ~ '^[A-Z0-9-]{3,20}$'),
+  colaborador text not null,
+  porcentaje  smallint not null check (porcentaje between 1 and 50),
+  activo      boolean not null default true,
+  vence       date,                -- incluido; sin fecha, no vence
+  max_usos    integer check (max_usos > 0),
+  creado_en   timestamptz not null default now()
+);
+alter table codigos_descuento enable row level security;
+
+-- Código con el que se hizo cada reserva (para medir a cada colaborador).
+alter table reservas add column if not exists codigo_descuento text;
+create index if not exists reservas_codigo_descuento_idx on reservas (codigo_descuento) where codigo_descuento is not null;

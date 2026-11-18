@@ -246,6 +246,9 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
                       <span className="font-bold">{pesos(r.total)}</span>
                       <span className="block text-xs text-suave">separa {pesos(r.anticipo)}</span>
                       {r.descuento > 0 && <span className="block text-xs text-cafe">🎁 −{pesos(r.descuento)}</span>}
+                      {r.codigoDescuento && (
+                        <span className="block text-xs font-bold text-cafe">🤝 Código {r.codigoDescuento}</span>
+                      )}
                       {r.pago && <span className="block text-xs text-suave">{r.pago.proveedor}: {r.pago.id}</span>}
                       {porVerificar && r.pagoReportado && (
                         <span className="mt-1 block rounded-lg bg-sol/30 px-2 py-1 text-xs font-bold text-[#7a4e00]">
