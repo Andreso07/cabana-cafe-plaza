@@ -6,7 +6,8 @@ import { nocheCerrada, type ConfigPrecios } from "./precios";
 
 export const SUGERENCIAS = {
   ninguno: "No marcar fechas",
-  martes: "Martes (1 noche)",
+  // La clave sigue siendo «martes» para no romper los planes ya guardados.
+  martes: "Martes a jueves (1 noche)",
   viernes: "Viernes (1 noche)",
   sabado: "Sábado (1 noche)",
   domingo: "Domingo (1 noche)",
@@ -31,8 +32,8 @@ export function sugerenciaDe(plan: { id: string; sugerir?: string }): Sugerencia
 function noches(tipo: Sugerencia, f: Fecha): number {
   const dia = diaSemana(f);
   switch (tipo) {
-    case "martes":
-      return dia === 2 ? 1 : 0;
+    case "martes": // cualquier noche de martes a jueves
+      return dia >= 2 && dia <= 4 ? 1 : 0;
     case "viernes":
       return dia === 5 ? 1 : 0;
     case "sabado":
