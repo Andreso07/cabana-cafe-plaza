@@ -29,6 +29,7 @@ export type Descuento = {
 } & (
   | { tipo: "noches"; minNoches: number } // estadías largas
   | { tipo: "fechas"; desde: string; hasta: string } // llegadas dentro de un rango
+  | { tipo: "entreSemana"; minNoches: number } // todas las noches son de martes a jueves
 );
 
 /** Tarjeta de la sección «Planes». Es publicidad: lo que se cobra sale del precio de cada noche. */

@@ -378,7 +378,9 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
                 <strong>{d.nombre}</strong>: −{d.porcentaje}%{" "}
                 {d.tipo === "noches"
                   ? `desde ${d.minNoches} noches`
-                  : `llegando entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}`}
+                  : d.tipo === "entreSemana"
+                    ? `solo noches de martes a jueves, desde ${d.minNoches} ${d.minNoches === 1 ? "noche" : "noches"}`
+                    : `llegando entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}`}
               </span>
               <form action={alternarDescuento}>
                 <input type="hidden" name="id" value={d.id} />
@@ -399,9 +401,10 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
             <select name="tipo" className={campo} defaultValue="noches">
               <option value="noches">Por número de noches</option>
               <option value="fechas">Por fechas de llegada</option>
+              <option value="entreSemana">Solo entre semana (martes a jueves)</option>
             </select>
           </label>
-          <Campo nombre="minNoches" titulo="Desde cuántas noches" valor="" inputMode="numeric" placeholder="3" ayuda="Solo para «por número de noches»." />
+          <Campo nombre="minNoches" titulo="Desde cuántas noches" valor="" inputMode="numeric" placeholder="3" ayuda="Para «por número de noches» y «entre semana». En «entre semana», todas las noches deben ser de martes, miércoles o jueves (no festivos)." />
           <Campo nombre="desde" titulo="Llegando desde" valor="" type="date" ayuda="Solo para «por fechas»." />
           <Campo nombre="hasta" titulo="Llegando hasta" valor="" type="date" />
           <div className="md:col-span-3"><button className={guardarBtn}>Agregar descuento</button></div>

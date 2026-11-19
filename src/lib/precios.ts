@@ -77,9 +77,13 @@ export type Cotizacion = {
   minNoches: number;
 };
 
-function aplica(d: Descuento, entrada: Fecha, n: number): boolean {
+function aplica(d: Descuento, entrada: Fecha, lista: { tipo: TipoNoche }[]): boolean {
   if (!d.activo || d.porcentaje <= 0) return false;
-  return d.tipo === "noches" ? n >= d.minNoches : entrada >= d.desde && entrada <= d.hasta;
+  if (d.tipo === "noches") return lista.length >= d.minNoches;
+  // Entre semana: TODAS las noches tienen precio de semana (martes a jueves; no viernes, fin de
+  // semana, festivo, víspera de festivo ni fecha especial). Una que no lo sea, y no aplica.
+  if (d.tipo === "entreSemana") return lista.length >= d.minNoches && lista.every((n) => n.tipo === "semana");
+  return entrada >= d.desde && entrada <= d.hasta;
 }
 
 /**
@@ -115,7 +119,7 @@ export function cotizar(
 
   // Se aplica el mejor descuento disponible; no se acumulan.
   const mejor = cfg.descuentos
-    .filter((d) => aplica(d, entrada, lista.length))
+    .filter((d) => aplica(d, entrada, lista))
     .sort((a, b) => b.porcentaje - a.porcentaje)[0];
   let descuento: Cotizacion["descuento"] = mejor
     ? { nombre: mejor.nombre, porcentaje: mejor.porcentaje, valor: aMil((subtotal * mejor.porcentaje) / 100) }

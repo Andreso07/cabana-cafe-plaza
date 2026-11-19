@@ -332,10 +332,14 @@ export async function agregarDescuento(form: FormData) {
     const nombre = texto(form, "nombre", 60);
     if (!nombre) throw new Invalido("Descuento: ponle un nombre, por ejemplo «Semana completa»");
     const porcentaje = numero(form, "porcentaje", "Porcentaje de descuento", 1, 90);
-    const tipo = texto(form, "tipo", 10);
+    const tipo = texto(form, "tipo", 12);
     let d: Descuento;
     if (tipo === "noches") {
       d = { id: nuevoId(), nombre, porcentaje, activo: true, tipo, minNoches: numero(form, "minNoches", "Desde cuántas noches", 2, 60) };
+    } else if (tipo === "entreSemana") {
+      // Vacío = desde 1 noche: una sola noche de martes, miércoles o jueves ya tiene descuento.
+      const min = texto(form, "minNoches", 5) ? numero(form, "minNoches", "Desde cuántas noches", 1, 60) : 1;
+      d = { id: nuevoId(), nombre, porcentaje, activo: true, tipo, minNoches: min };
     } else {
       const desde = texto(form, "desde", 10);
       const hasta = texto(form, "hasta", 10) || desde;
