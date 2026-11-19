@@ -78,7 +78,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
 
   function clic(f: Fecha) {
     setAviso(null);
-    if (!entrada || salida || f <= entrada) {
+    // Un día después de la llegada siempre se toma como salida, aunque ya hubiera una: así se puede
+    // alargar la estadía (martes→miércoles y luego tocar el jueves) sin empezar de nuevo.
+    if (!entrada || f <= entrada) {
       if (noDisponible(f)) {
         setAviso(cerrada(f) ? "Los lunes no hay servicio, salvo festivos. Ese día sí puedes salir." : "Esa noche ya está ocupada.");
         return;
@@ -136,9 +138,17 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
       {entrada && salida && (() => {
         const noches = Math.round((aDate(salida).getTime() - aDate(entrada).getTime()) / 86_400_000);
         return (
-          <p className="mb-3 rounded-[14px] bg-cafe/10 px-3 py-2 text-center text-sm font-extrabold text-cafe">
-            🌙 {noches} {noches === 1 ? "noche" : "noches"}: llegas el {diaClaro(entrada)} y te vas el {diaClaro(salida, entrada)}
-          </p>
+          <div className="mb-3 rounded-[14px] bg-cafe/10 px-3 py-2 text-center">
+            <p className="text-sm font-extrabold text-cafe">
+              🌙 {noches} {noches === 1 ? "noche" : "noches"}: llegas el {diaClaro(entrada)} y te vas el {diaClaro(salida, entrada)}
+            </p>
+            <p className="mt-0.5 text-xs font-semibold text-suave">
+              ¿Una noche más? Toca otro día de salida.{" "}
+              <button type="button" onClick={() => { setAviso(null); onCambio(null, null); }} className="font-extrabold text-teja underline">
+                Borrar fechas
+              </button>
+            </p>
+          </div>
         );
       })()}
 
@@ -163,7 +173,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                 const esSalida = f === salida;
                 const enRango = entrada && salida && f > entrada && f < salida;
                 // El día de salida puede ser una noche ocupada: se sale antes de que llegue el siguiente.
-                const puedeSerSalida = Boolean(entrada && !salida && f > entrada && nochesLibres(entrada, f));
+                const puedeSerSalida = Boolean(entrada && f > entrada && nochesLibres(entrada, f));
                 const deshabilitado = pasado || ((ocupada || sinServicio) && !puedeSerSalida);
                 const festivo = esFestivo(f);
                 const noche = tipoNoche(f, cfg);
