@@ -18,12 +18,17 @@ export default async function Privacidad() {
       <h2 className="font-titulo font-extrabold text-xl pt-2">Qué datos recogemos</h2>
       <p>
         Nombre, número de documento, correo electrónico, celular, las fechas de la reserva y, para separarla,
-        la foto de la cédula del responsable que se envía por WhatsApp.
+        la foto de la cédula del responsable que se envía por WhatsApp. Si dejas una reseña o compartes fotos de tu
+        visita, también tu nombre, tu comentario y esas fotos.
       </p>
       <h2 className="font-titulo font-extrabold text-xl pt-2">Para qué los usamos</h2>
       <ul className="list-disc pl-6">
         <li>Gestionar tu reserva, el pago y la comunicación sobre tu estadía.</li>
         <li>Cumplir obligaciones legales de alojamiento turístico (registro de huéspedes y facturación).</li>
+        <li>
+          Publicar en esta web y en nuestras redes sociales las reseñas y fotos que nos autorices, con tu nombre y la
+          inicial del apellido. Puedes pedir que las quitemos en cualquier momento.
+        </li>
       </ul>
       <p>
         No vendemos ni compartimos tus datos con terceros, salvo la pasarela de pagos para procesar el pago y

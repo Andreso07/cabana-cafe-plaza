@@ -18,6 +18,12 @@ export default async function Resena() {
       <div className="mt-6 rounded-[28px] border-[3px] border-teja bg-white p-5 shadow-[0_12px_0_var(--teja)]">
         <FormularioResena />
       </div>
+      <Link
+        href="/fotos"
+        className="boton-goma mt-8 flex items-center justify-center gap-2 rounded-full border-[3px] border-teja bg-white px-5 py-3 font-extrabold text-teja"
+      >
+        📸 ¿Tomaste buenas fotos? Compártelas aquí
+      </Link>
       {(cfg.redes.facebook || cfg.redes.instagram || cfg.redes.tiktok) && (
         <div className="mt-10 text-center font-extrabold">
           <p>Síguenos en redes</p>

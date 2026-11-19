@@ -6,6 +6,7 @@ import { Redes } from "@/components/Redes";
 import { Reservar } from "@/components/Reservar";
 import { leerConfig } from "@/lib/config";
 import { pesos } from "@/lib/precios";
+import { fotosPublicas } from "@/lib/fotos";
 import { nombrePublico, resenasPublicas } from "@/lib/resenas";
 import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
@@ -27,10 +28,11 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
 }
 
 export default async function Inicio() {
-  const [cfg, opiniones] = await Promise.all([
+  const [cfg, opiniones, fotos] = await Promise.all([
     leerConfig(),
     // Si las reseñas fallan, la página se muestra igual, sin esa sección llena.
     resenasPublicas(6).catch(() => ({ resenas: [], promedio: null, total: 0 })),
+    fotosPublicas(8).catch(() => []),
   ]);
 
 
@@ -246,6 +248,39 @@ export default async function Inicio() {
               <FormularioResena />
             </div>
           </div>
+        </div>
+        {/* Fotos de los huéspedes (aprobadas en el panel) */}
+        <div className="mt-14">
+          <h3 className="font-titulo text-center text-[26px] md:text-[32px] leading-tight font-extrabold">Así lo vivieron nuestros huéspedes</h3>
+          {fotos.length > 0 && (
+            <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {fotos.map((f) => (
+                <li key={f.id}>
+                  <figure>
+                    <a href={`/api/fotos/${f.id}`} target="_blank" rel="noopener" className="block overflow-hidden rounded-[18px] border-[3px] border-white shadow-[0_6px_0_rgba(0,0,0,0.06)]">
+                      <Image
+                        src={`/api/fotos/${f.id}?t=mini`}
+                        alt={f.comentario ?? `Foto de ${nombrePublico(f.nombre)} en ${cfg.nombre}`}
+                        width={480}
+                        height={Math.round((480 * f.alto) / f.ancho)}
+                        unoptimized
+                        className="aspect-square w-full object-cover transition-transform hover:scale-105"
+                      />
+                    </a>
+                    <figcaption className="mt-1.5 text-xs font-bold text-suave">
+                      📸 {nombrePublico(f.nombre)}
+                      {f.comentario && <span className="font-semibold"> · {f.comentario}</span>}
+                    </figcaption>
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-6 text-center">
+            <a href="/fotos" className="boton-goma inline-block rounded-full bg-white border-[3px] border-teja px-5 py-2.5 font-extrabold text-teja">
+              📸 {fotos.length > 0 ? "Comparte tus fotos" : "¿Ya nos visitaste? Comparte tus fotos"}
+            </a>
+          </p>
         </div>
         {(cfg.redes.facebook || cfg.redes.instagram || cfg.redes.tiktok) && (
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3 font-extrabold">

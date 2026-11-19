@@ -21,6 +21,9 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
           <Link href="/admin/resenas" className="rounded-full px-4 py-2 bg-white border-2 border-black/5 hover:border-teja/40">
             ⭐ Reseñas
           </Link>
+          <Link href="/admin/fotos" className="rounded-full px-4 py-2 bg-white border-2 border-black/5 hover:border-teja/40">
+            📸 Fotos
+          </Link>
           <Link href="/admin/estadisticas" className="rounded-full px-4 py-2 bg-white border-2 border-black/5 hover:border-teja/40">
             📈 Estadísticas
           </Link>

@@ -11,6 +11,7 @@ import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
 import { borrarResena, cambiarEstadoResena, type EstadoResena } from "@/lib/resenas";
+import { borrarFoto, cambiarEstadoFoto, type EstadoFoto } from "@/lib/fotos";
 import { alternarCodigo, borrarCodigo, CodigoYaExiste, crearCodigo, normalizarCodigo } from "@/lib/codigos";
 import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
@@ -380,6 +381,25 @@ export async function eliminarResena(form: FormData) {
   await exigirAdmin();
   await borrarResena(texto(form, "id", 20));
   revalidatePath("/admin/resenas");
+  revalidatePath("/");
+}
+
+// ---------- Fotos de huéspedes ----------
+
+/** Aprueba (se publica en la galería), oculta o devuelve a pendiente una foto. */
+export async function moderarFoto(form: FormData) {
+  await exigirAdmin();
+  const estado = texto(form, "estado", 12);
+  if (estado !== "aprobada" && estado !== "oculta" && estado !== "pendiente") return;
+  await cambiarEstadoFoto(texto(form, "id", 20), estado as EstadoFoto);
+  revalidatePath("/admin/fotos");
+  revalidatePath("/");
+}
+
+export async function eliminarFoto(form: FormData) {
+  await exigirAdmin();
+  await borrarFoto(texto(form, "id", 20));
+  revalidatePath("/admin/fotos");
   revalidatePath("/");
 }
 

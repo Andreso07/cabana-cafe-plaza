@@ -103,3 +103,20 @@ alter table codigos_descuento enable row level security;
 -- Código con el que se hizo cada reserva (para medir a cada colaborador).
 alter table reservas add column if not exists codigo_descuento text;
 create index if not exists reservas_codigo_descuento_idx on reservas (codigo_descuento) where codigo_descuento is not null;
+
+-- Fotos que comparten los huéspedes desde /fotos. Quedan «pendiente» hasta que el dueño las apruebe.
+-- La imagen va en la base (bytea) para no depender de otra cuenta ni de otra llave: el navegador la
+-- reduce antes de subirla (máx. 1600 px, unos 300 KB) y la miniatura (480 px) se guarda aparte.
+create table if not exists fotos_huespedes (
+  id         bigint generated always as identity primary key,
+  nombre     text not null,
+  comentario text,
+  estado     text not null default 'pendiente' check (estado in ('pendiente', 'aprobada', 'oculta')),
+  imagen     bytea not null,
+  miniatura  bytea not null,
+  ancho      integer not null,
+  alto       integer not null,
+  creada_en  timestamptz not null default now()
+);
+create index if not exists fotos_huespedes_estado_idx on fotos_huespedes (estado, creada_en desc);
+alter table fotos_huespedes enable row level security;
