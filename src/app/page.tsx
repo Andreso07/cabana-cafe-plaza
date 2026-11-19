@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { BotonFlotanteReservar } from "@/components/BotonFlotanteReservar";
 import { BotonPlan } from "@/components/BotonPlan";
 import { ProveedorReserva } from "@/components/EstadoReserva";
 import { FormularioResena } from "@/components/FormularioResena";
@@ -42,7 +43,7 @@ export default async function Inicio() {
   return (
     <main>
       {/* Banner */}
-      <section className="relative h-[72vh] min-h-[440px] w-full">
+      <section id="banner" className="relative h-[72vh] min-h-[440px] w-full">
         <Image
           src="/cabana.jpg"
           alt={`${cfg.nombre}: cabaña con techo de teja roja y frente de vidrio entre cafetales, con montañas al fondo`}
@@ -52,7 +53,7 @@ export default async function Inicio() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-10 text-white">
+        <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-16 text-white">
           <Etiqueta>🏡 {cfg.vereda} · {cfg.municipio}</Etiqueta>
           <h1 className="font-titulo mt-4 text-[40px] sm:text-[60px] leading-[0.95] font-extrabold tracking-tight">
             {cfg.heroTitulo}
@@ -68,6 +69,14 @@ export default async function Inicio() {
             </a>
           </div>
         </div>
+        {/* Flecha que rebota: avisa que la página sigue más abajo. */}
+        <a
+          href="#planes"
+          aria-label="Bajar para ver más"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 flex size-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/15 text-xl font-extrabold text-white backdrop-blur hover:bg-white/30 motion-safe:animate-bounce"
+        >
+          ↓
+        </a>
       </section>
 
       <ProveedorReserva>
@@ -317,6 +326,8 @@ export default async function Inicio() {
           </a>
         </div>
       </section>
+      <BotonFlotanteReservar />
+      <div className="h-20 md:hidden" aria-hidden />
     </main>
   );
 }
