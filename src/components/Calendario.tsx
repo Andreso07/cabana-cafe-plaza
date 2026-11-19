@@ -10,6 +10,14 @@ const MESES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 const DIAS = ["L", "M", "M", "J", "V", "S", "D"];
+const NOMBRES_DIA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+/** «viernes 4» (y el mes si no es el mismo de `otra`: «viernes 31 de diciembre»). */
+function diaClaro(f: Fecha, otra?: Fecha): string {
+  const d = aDate(f);
+  const base = `${NOMBRES_DIA[d.getUTCDay()]} ${d.getUTCDate()}`;
+  return otra && otra.slice(0, 7) !== f.slice(0, 7) ? `${base} de ${MESES[d.getUTCMonth()].toLowerCase()}` : base;
+}
 
 type Props = {
   hoy: Fecha;
@@ -118,6 +126,22 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
         </button>
       </div>
 
+      {/* El calendario funciona por noches: el día de salida no se duerme. Se dice con palabras para
+          que nadie crea que marcar «4 y 5» son dos noches. */}
+      {entrada && !salida && (
+        <p className="mb-3 rounded-[14px] bg-sol/20 px-3 py-2 text-center text-xs font-bold">
+          Ahora toca el día en que te vas. Ej.: para dormir viernes y sábado, toca el domingo.
+        </p>
+      )}
+      {entrada && salida && (() => {
+        const noches = Math.round((aDate(salida).getTime() - aDate(entrada).getTime()) / 86_400_000);
+        return (
+          <p className="mb-3 rounded-[14px] bg-cafe/10 px-3 py-2 text-center text-sm font-extrabold text-cafe">
+            🌙 {noches} {noches === 1 ? "noche" : "noches"}: llegas el {diaClaro(entrada)} y te vas el {diaClaro(salida, entrada)}
+          </p>
+        );
+      })()}
+
       <div className="grid gap-6 md:grid-cols-2">
         {meses.map(({ anio, mes }, i) => (
           <div key={`${anio}-${mes}`} className={i === 1 ? "hidden md:block" : ""}>
@@ -148,7 +172,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                 // Verde = libre, rojo = reservado. La selección va en teja y el rango en amarillo
                 // para no confundirse con ninguno de los dos.
                 let clase = "bg-libre border-libre-borde text-libre-texto hover:border-libre-texto";
-                if (esEntrada || esSalida) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)]";
+                // Llegada rellena y salida solo con borde: a la vista no parecen dos noches.
+                if (esEntrada) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)]";
+                else if (esSalida) clase = "bg-white text-teja border-teja border-dashed";
                 else if (enRango) clase = "bg-sol/30 border-sol";
                 else if (pasado) clase = "bg-black/[0.03] border-transparent text-black/20";
                 else if (ocupada && puedeSerSalida) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto hover:border-ocupado-texto";
@@ -171,6 +197,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                     <span className={festivo && !esEntrada && !esSalida ? "text-teja font-semibold" : ""}>
                       {Number(f.slice(8))}
                     </span>
+                    {(esEntrada || esSalida) && (
+                      <span className="text-[9px] leading-none font-black uppercase tracking-wide">{esEntrada ? "llega" : "sale"}</span>
+                    )}
                     {especial && !pasado && !ocupada && !sinServicio && !esEntrada && !esSalida && (
                       <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-sol" aria-hidden />
                     )}
@@ -188,7 +217,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
         {cfg.nochesCerradas.length > 0 && (
           <span className="flex items-center gap-1"><span className="size-3 rounded bg-black/[0.08]" /> Sin servicio (lunes, salvo festivos)</span>
         )}
-        <span className="flex items-center gap-1"><span className="size-3 rounded bg-teja" /> Tu selección</span>
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-teja" /> Llegada</span>
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-sol/30 border border-sol" /> Noches</span>
+        <span className="flex items-center gap-1"><span className="size-3 rounded bg-white border border-dashed border-teja" /> Salida (no se duerme)</span>
         <span className="flex items-center gap-1"><span className="text-teja font-semibold">15</span> Festivo</span>
         {cfg.fechasEspeciales.length > 0 && (
           <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-sol" /> Fecha especial</span>
