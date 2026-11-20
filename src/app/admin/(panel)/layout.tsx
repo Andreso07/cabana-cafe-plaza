@@ -4,6 +4,8 @@ import { esAdmin } from "@/lib/admin";
 import { salir } from "../acciones";
 import { CierrePorInactividad } from "@/components/CierrePorInactividad";
 import { INACTIVIDAD_MIN } from "@/lib/sesion";
+// Solo lo lee el servidor: el package.json no viaja al navegador.
+import paquete from "../../../../package.json";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Administración", robots: { index: false } };
@@ -39,6 +41,7 @@ export default async function PanelLayout({ children }: LayoutProps<"/admin">) {
         </form>
       </div>
       {children}
+      <p className="mt-12 text-center text-xs font-bold text-suave/70">Versión {paquete.version}</p>
     </div>
   );
 }
