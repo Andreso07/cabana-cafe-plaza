@@ -34,6 +34,17 @@ export default async function Privacidad() {
         No vendemos ni compartimos tus datos con terceros, salvo la pasarela de pagos para procesar el pago y
         las autoridades cuando la ley lo exija.
       </p>
+      <h2 className="font-titulo font-extrabold text-xl pt-2">Medición de uso de la web</h2>
+      <p>
+        Usamos Microsoft Clarity para entender cómo se usa esta web: dónde tocan los visitantes, hasta dónde bajan y
+        qué partes no se entienden. Registra de forma anónima los clics y el desplazamiento, y guarda cookies propias
+        en tu navegador para reconocer la visita. Lo que escribes en los formularios (nombre, documento, correo,
+        celular) no se registra. Microsoft trata esos datos como encargado; puedes ver su{" "}
+        <a href="https://privacy.microsoft.com/es-es/privacystatement" target="_blank" rel="noopener" className="underline">
+          declaración de privacidad
+        </a>
+        . Puedes evitarlo bloqueando las cookies de clarity.ms en tu navegador.
+      </p>
       <h2 className="font-titulo font-extrabold text-xl pt-2">Tus derechos</h2>
       <p>
         Puedes conocer, actualizar, rectificar y pedir la supresión de tus datos, o revocar esta autorización,
