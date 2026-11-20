@@ -12,6 +12,7 @@ import { esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
 import { borrarResena, cambiarEstadoResena, type EstadoResena } from "@/lib/resenas";
 import { borrarFoto, cambiarEstadoFoto, type EstadoFoto } from "@/lib/fotos";
+import { borrarFotoCabana, describirFotoCabana, moverFotoCabana } from "@/lib/fotosCabana";
 import { alternarCodigo, borrarCodigo, CodigoYaExiste, crearCodigo, normalizarCodigo } from "@/lib/codigos";
 import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
@@ -403,6 +404,31 @@ export async function moderarFoto(form: FormData) {
 export async function eliminarFoto(form: FormData) {
   await exigirAdmin();
   await borrarFoto(texto(form, "id", 20));
+  revalidatePath("/admin/fotos");
+  revalidatePath("/");
+}
+
+// ---------- Fotos de la cabaña ----------
+
+export async function moverFotoDeCabana(form: FormData) {
+  await exigirAdmin();
+  const hacia = texto(form, "hacia", 8);
+  if (hacia !== "antes" && hacia !== "despues") return;
+  await moverFotoCabana(texto(form, "id", 20), hacia);
+  revalidatePath("/admin/fotos");
+  revalidatePath("/");
+}
+
+export async function describirFotoDeCabana(form: FormData) {
+  await exigirAdmin();
+  await describirFotoCabana(texto(form, "id", 20), texto(form, "descripcion", 80).replace(/\s+/g, " ") || null);
+  revalidatePath("/admin/fotos");
+  revalidatePath("/");
+}
+
+export async function eliminarFotoDeCabana(form: FormData) {
+  await exigirAdmin();
+  await borrarFotoCabana(texto(form, "id", 20));
   revalidatePath("/admin/fotos");
   revalidatePath("/");
 }

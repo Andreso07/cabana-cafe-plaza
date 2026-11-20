@@ -2,29 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { esImagen, reducirImagen } from "@/lib/reducirImagen";
 
 const campo =
   "mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold outline-none focus:border-teja focus:bg-white";
 
 const MAX_FOTOS = 5;
-
-/**
- * Reduce la foto en el navegador antes de subirla: la de un celular pesa 3–8 MB y aquí queda en unos
- * 300 KB. Al redibujarla en un lienzo también se pierden los datos ocultos del archivo (EXIF), entre
- * ellos la ubicación GPS donde se tomó.
- */
-async function reducir(archivo: File, lado: number, calidad: number): Promise<Blob> {
-  const bitmap = await createImageBitmap(archivo, { imageOrientation: "from-image" });
-  const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height));
-  const lienzo = document.createElement("canvas");
-  lienzo.width = Math.round(bitmap.width * escala);
-  lienzo.height = Math.round(bitmap.height * escala);
-  lienzo.getContext("2d")!.drawImage(bitmap, 0, 0, lienzo.width, lienzo.height);
-  bitmap.close();
-  return new Promise((ok, mal) =>
-    lienzo.toBlob((b) => (b ? ok(b) : mal(new Error("sin imagen"))), "image/jpeg", calidad),
-  );
-}
 
 export function FormularioFotos({ nombreCabana }: { nombreCabana: string }) {
   const [archivos, setArchivos] = useState<File[]>([]);
@@ -33,7 +16,7 @@ export function FormularioFotos({ nombreCabana }: { nombreCabana: string }) {
   const [subidas, setSubidas] = useState<number | null>(null);
 
   function elegir(e: React.ChangeEvent<HTMLInputElement>) {
-    const lista = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name));
+    const lista = Array.from(e.target.files ?? []).filter(esImagen);
     setError(lista.length > MAX_FOTOS ? `Puedes enviar hasta ${MAX_FOTOS} fotos a la vez. Tomamos las primeras ${MAX_FOTOS}.` : null);
     setArchivos(lista.slice(0, MAX_FOTOS));
   }
@@ -51,7 +34,7 @@ export function FormularioFotos({ nombreCabana }: { nombreCabana: string }) {
     for (const [i, archivo] of archivos.entries()) {
       setEnviando(`Subiendo foto ${i + 1} de ${archivos.length}…`);
       try {
-        const [imagen, miniatura] = await Promise.all([reducir(archivo, 1600, 0.82), reducir(archivo, 480, 0.75)]);
+        const [imagen, miniatura] = await Promise.all([reducirImagen(archivo, 1600, 0.82), reducirImagen(archivo, 480, 0.75)]);
         const datos = new FormData();
         datos.set("nombre", String(f.get("nombre") ?? ""));
         datos.set("comentario", String(f.get("comentario") ?? ""));

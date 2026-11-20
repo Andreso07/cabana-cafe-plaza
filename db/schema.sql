@@ -120,3 +120,18 @@ create table if not exists fotos_huespedes (
 );
 create index if not exists fotos_huespedes_estado_idx on fotos_huespedes (estado, creada_en desc);
 alter table fotos_huespedes enable row level security;
+
+-- Fotos de la cabaña que sube el dueño desde el panel (galería de la portada). No pasan por
+-- aprobación. `orden` decide en qué puesto sale cada una; el dueño lo cambia con flechas.
+create table if not exists fotos_cabana (
+  id          bigint generated always as identity primary key,
+  descripcion text,
+  orden       integer not null,
+  imagen      bytea not null,
+  miniatura   bytea not null,
+  ancho       integer not null,
+  alto        integer not null,
+  creada_en   timestamptz not null default now()
+);
+create index if not exists fotos_cabana_orden_idx on fotos_cabana (orden);
+alter table fotos_cabana enable row level security;

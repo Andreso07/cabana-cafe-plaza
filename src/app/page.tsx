@@ -8,6 +8,8 @@ import { Reservar } from "@/components/Reservar";
 import { leerConfig } from "@/lib/config";
 import { pesos } from "@/lib/precios";
 import { fotosPublicas } from "@/lib/fotos";
+import { listarFotosCabana } from "@/lib/fotosCabana";
+import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { nombrePublico, resenasPublicas } from "@/lib/resenas";
 import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
@@ -29,11 +31,12 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
 }
 
 export default async function Inicio() {
-  const [cfg, opiniones, fotos] = await Promise.all([
+  const [cfg, opiniones, fotos, fotosCabana] = await Promise.all([
     leerConfig(),
     // Si las reseñas fallan, la página se muestra igual, sin esa sección llena.
     resenasPublicas(6).catch(() => ({ resenas: [], promedio: null, total: 0 })),
     fotosPublicas(8).catch(() => []),
+    listarFotosCabana().catch(() => []),
   ]);
 
 
@@ -71,12 +74,42 @@ export default async function Inicio() {
         </div>
         {/* Flecha que rebota: avisa que la página sigue más abajo. */}
         <a
-          href="#planes"
+          href="#servicios"
           aria-label="Bajar para ver más"
           className="absolute bottom-3 left-1/2 -translate-x-1/2 flex size-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/15 text-xl font-extrabold text-white backdrop-blur hover:bg-white/30 motion-safe:animate-bounce"
         >
           ↓
         </a>
+      </section>
+
+      {/* Fotos de la cabaña y servicios */}
+      <section id="servicios" className="scroll-mt-20 bg-white border-b-[3px] border-cafe/10">
+        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+          <div className="text-center max-w-[640px] mx-auto">
+            <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
+            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Todo para descansar</h2>
+          </div>
+          {/* Fotos justo después del banner: la gente decide si le gusta el lugar antes de mirar precios. */}
+          <GaleriaCabana fotos={fotosCabana} nombre={cfg.nombre} />
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
+            {cfg.servicios.map((s) => (
+              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
+                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
+                  {s.icono}
+                </span>
+                <span className="leading-tight min-w-0">
+                  <span className="block font-extrabold text-sm">{s.titulo}</span>
+                  <span className="block text-xs font-bold text-suave">{s.detalle}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          {cfg.noIncluye.length > 0 && (
+            <p className="mt-6 text-center text-sm font-bold text-suave">
+              No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.
+            </p>
+          )}
+        </div>
       </section>
 
       <ProveedorReserva>
@@ -189,34 +222,6 @@ export default async function Inicio() {
       </section>
 
       </ProveedorReserva>
-
-      {/* Servicios */}
-      <section id="servicios" className="bg-white border-y-[3px] border-cafe/10">
-        <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
-          <div className="text-center max-w-[640px] mx-auto">
-            <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
-            <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Todo para descansar</h2>
-          </div>
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
-            {cfg.servicios.map((s) => (
-              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
-                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
-                  {s.icono}
-                </span>
-                <span className="leading-tight min-w-0">
-                  <span className="block font-extrabold text-sm">{s.titulo}</span>
-                  <span className="block text-xs font-bold text-suave">{s.detalle}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-          {cfg.noIncluye.length > 0 && (
-            <p className="mt-6 text-center text-sm font-bold text-suave">
-              No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.
-            </p>
-          )}
-        </div>
-      </section>
 
       {/* Reseñas */}
       <section id="resenas" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
