@@ -341,6 +341,11 @@ export async function agregarDescuento(form: FormData) {
       // Vacío = desde 1 noche: una sola noche de martes, miércoles o jueves ya tiene descuento.
       const min = texto(form, "minNoches", 5) ? numero(form, "minNoches", "Desde cuántas noches", 1, 60) : 1;
       d = { id: nuevoId(), nombre, porcentaje, activo: true, tipo, minNoches: min };
+    } else if (tipo === "meses") {
+      const meses = [...new Set(form.getAll("meses").map(Number))].filter((m) => Number.isInteger(m) && m >= 1 && m <= 12).sort((a, b) => a - b);
+      const min = texto(form, "minNoches", 5) ? numero(form, "minNoches", "Desde cuántas noches", 1, 60) : 1;
+      // Los 12 marcados es lo mismo que ninguno: todo el año.
+      d = { id: nuevoId(), nombre, porcentaje, activo: true, tipo, meses: meses.length === 12 ? [] : meses, minNoches: min };
     } else {
       const desde = texto(form, "desde", 10);
       const hasta = texto(form, "hasta", 10) || desde;

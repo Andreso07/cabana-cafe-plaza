@@ -83,6 +83,12 @@ function aplica(d: Descuento, entrada: Fecha, lista: { tipo: TipoNoche }[]): boo
   // Entre semana: TODAS las noches tienen precio de semana (martes a jueves; no viernes, fin de
   // semana, festivo, víspera de festivo ni fecha especial). Una que no lo sea, y no aplica.
   if (d.tipo === "entreSemana") return lista.length >= d.minNoches && lista.every((n) => n.tipo === "semana");
+  // Por meses: cuenta el mes del día de llegada, y entonces vale para toda la estadía (también las
+  // noches que caigan en el mes siguiente, festivos y fines de semana incluidos). Sin meses: siempre.
+  if (d.tipo === "meses") {
+    const mes = Number(entrada.slice(5, 7));
+    return lista.length >= d.minNoches && (d.meses.length === 0 || d.meses.includes(mes));
+  }
   return entrada >= d.desde && entrada <= d.hasta;
 }
 

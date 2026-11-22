@@ -8,6 +8,7 @@ import { googleConfigurado } from "@/lib/googleCalendar";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
+import { describirMeses, NOMBRES_MES } from "@/config/cabana";
 import { listarCodigos } from "@/lib/codigos";
 import {
   agregarCodigo,
@@ -380,7 +381,9 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
                   ? `desde ${d.minNoches} noches`
                   : d.tipo === "entreSemana"
                     ? `solo noches de martes a jueves, desde ${d.minNoches} ${d.minNoches === 1 ? "noche" : "noches"}`
-                    : `llegando entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}`}
+                    : d.tipo === "meses"
+                      ? `todos los planes, ${d.meses.length === 0 ? "todo el año" : `llegando en ${describirMeses(d.meses)}`}${d.minNoches > 1 ? `, desde ${d.minNoches} noches` : ""}`
+                      : `llegando entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}`}
               </span>
               <form action={alternarDescuento}>
                 <input type="hidden" name="id" value={d.id} />
@@ -402,11 +405,27 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
               <option value="noches">Por número de noches</option>
               <option value="fechas">Por fechas de llegada</option>
               <option value="entreSemana">Solo entre semana (martes a jueves)</option>
+              <option value="meses">Todos los planes, por meses</option>
             </select>
           </label>
-          <Campo nombre="minNoches" titulo="Desde cuántas noches" valor="" inputMode="numeric" placeholder="3" ayuda="Para «por número de noches» y «entre semana». En «entre semana», todas las noches deben ser de martes, miércoles o jueves (no festivos)." />
+          <Campo nombre="minNoches" titulo="Desde cuántas noches" valor="" inputMode="numeric" placeholder="3" ayuda="Para «por número de noches», «entre semana» y «por meses». En «entre semana», todas las noches deben ser de martes, miércoles o jueves (no festivos). Vacío en «por meses»: desde 1 noche." />
           <Campo nombre="desde" titulo="Llegando desde" valor="" type="date" ayuda="Solo para «por fechas»." />
           <Campo nombre="hasta" titulo="Llegando hasta" valor="" type="date" />
+          <fieldset className="md:col-span-3">
+            <legend className={etiqueta}>Meses <span className="font-semibold text-suave">(solo para «por meses»)</span></legend>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {NOMBRES_MES.map((m, i) => (
+                <label key={m} className="flex items-center gap-1.5 rounded-full border-2 border-black/10 bg-white px-3 py-1 text-xs font-bold capitalize has-[:checked]:border-cafe has-[:checked]:bg-cafe/10">
+                  <input type="checkbox" name="meses" value={i + 1} className="accent-[var(--cafe)]" />
+                  {m}
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs font-semibold text-suave">
+              Cuenta el mes del día de llegada, y el descuento vale para toda la estadía, en cualquier plan (fines de
+              semana y festivos incluidos). Sin marcar ninguno: todo el año.
+            </p>
+          </fieldset>
           <div className="md:col-span-3"><button className={guardarBtn}>Agregar descuento</button></div>
         </form>
       </Tarjeta>

@@ -30,7 +30,18 @@ export type Descuento = {
   | { tipo: "noches"; minNoches: number } // estadías largas
   | { tipo: "fechas"; desde: string; hasta: string } // llegadas dentro de un rango
   | { tipo: "entreSemana"; minNoches: number } // todas las noches son de martes a jueves
+  // Llegadas en ciertos meses (1 = enero). Vacío = todo el año, o sea, cualquier plan y fecha.
+  | { tipo: "meses"; meses: number[]; minNoches: number }
 );
+
+export const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+/** «enero y febrero», «todo el año». */
+export function describirMeses(meses: number[]): string {
+  if (meses.length === 0 || meses.length === 12) return "todo el año";
+  const n = meses.map((m) => NOMBRES_MES[m - 1]);
+  return n.length === 1 ? n[0] : `${n.slice(0, -1).join(", ")} y ${n[n.length - 1]}`;
+}
 
 /** Tarjeta de la sección «Planes». Es publicidad: lo que se cobra sale del precio de cada noche. */
 export type Plan = {
