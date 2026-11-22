@@ -187,7 +187,11 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
               ))}
             </div>
             <div className="grid grid-cols-7 gap-1.5">
-              {diasDelMes(anio, mes).map((f, j) => {
+              {(() => {
+                // Mientras no hay llegada, los días libres dan saltitos en ola («¡escógeme!»). Cada uno
+                // lleva su turno en la ola; cuenta solo los libres de este mes.
+                let turno = 0;
+                return diasDelMes(anio, mes).map((f, j) => {
                 if (!f) return <span key={j} />;
                 const pasado = f < hoy || f > ultimoDia;
                 const ocupada = ocupadas.has(f);
@@ -215,6 +219,8 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                 // Lunes sin servicio: gris, no rojo (no está reservado), pero sí sirve como día de salida.
                 else if (sinServicio && puedeSerSalida) clase = "bg-black/[0.04] border-black/10 text-black/50 hover:border-black/30";
                 else if (sinServicio) clase = "bg-black/[0.04] border-transparent text-black/30";
+                const invita = !entrada && !deshabilitado && !ocupada && !sinServicio;
+                if (invita) clase += " dia-invita";
 
                 return (
                   <button
@@ -224,7 +230,13 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                     onClick={() => clic(f)}
                     className={`dia-cal relative aspect-square rounded-[12px] border-2 flex flex-col items-center justify-center text-sm font-extrabold transition-colors disabled:cursor-not-allowed ${clase}`}
                     // Las noches se pintan una tras otra, como una ola que va de la llegada a la salida.
-                    style={enRango ? { animationDelay: `${Math.min((Date.parse(f) - Date.parse(entrada)) / 86_400_000, 14) * 45}ms` } : undefined}
+                    style={
+                      enRango
+                        ? { animationDelay: `${Math.min((Date.parse(f) - Date.parse(entrada)) / 86_400_000, 14) * 45}ms` }
+                        : invita
+                          ? { animationDelay: `${1 + Math.min(turno++, 30) * 0.07}s` }
+                          : undefined
+                    }
                     aria-label={`${f}${ocupada ? ", ocupado" : ""}${sinServicio ? ", sin servicio" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
                     title={especial ? noche.nombre : undefined}
                     aria-pressed={esEntrada || esSalida}
@@ -240,7 +252,8 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                     )}
                   </button>
                 );
-              })}
+                });
+              })()}
             </div>
           </div>
         ))}

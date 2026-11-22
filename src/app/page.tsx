@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { Fragment } from "react";
-import { BotonFlotanteReservar } from "@/components/BotonFlotanteReservar";
 import { BotonPlan } from "@/components/BotonPlan";
 import { ProveedorReserva } from "@/components/EstadoReserva";
 import { FormularioResena } from "@/components/FormularioResena";
@@ -375,8 +374,6 @@ export default async function Inicio() {
           </a>
         </div>
       </section>
-      <BotonFlotanteReservar />
-      <div className="h-20 md:hidden" aria-hidden />
     </main>
   );
 }
