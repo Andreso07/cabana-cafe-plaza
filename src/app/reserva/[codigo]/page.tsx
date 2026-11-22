@@ -6,6 +6,7 @@ import { formatoLargo } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
 import { obtenerReserva } from "@/lib/store";
 import { urlDePago, wompiConfigurado } from "@/lib/wompi";
+import { Confeti } from "@/components/Confeti";
 import { Refrescar, ReportarPago, SimularPago } from "./acciones";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,11 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
         {r.estado === "expirada" && "La reserva expiró"}
         {r.estado === "cancelada" && "Reserva cancelada"}
       </h1>
+      {/* Celebración: una vez al apartar las fechas y otra al confirmarse el pago. */}
+      {(r.estado === "pendiente" || r.estado === "confirmada") && <Confeti clave={`${r.codigo}:${r.estado}`} />}
+      {r.estado === "pendiente" && (
+        <p className="mt-1 font-extrabold text-cafe">¡Tus fechas quedaron apartadas! 🎉 Solo falta el anticipo para confirmarlas.</p>
+      )}
       <p className="text-suave font-semibold mt-1">
         Código de reserva: <strong className="text-tinta">{r.codigo}</strong>
       </p>

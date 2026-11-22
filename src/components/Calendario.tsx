@@ -5,6 +5,25 @@ import { aDate, sumarDias, type Fecha } from "@/lib/fechas";
 import { esFestivo } from "@/lib/festivos";
 import { nocheCerrada, tipoNoche, type ConfigPrecios } from "@/lib/precios";
 
+/**
+ * Un comentario simpático sobre las fechas elegidas, para que elegir sea divertido. Mira qué noches
+ * son (entre semana, fin de semana, puente, festivo, fecha especial) y cuántas.
+ */
+function mensajeEstadia(entrada: Fecha, noches: number, cfg: Parameters<typeof tipoNoche>[1]): string {
+  const lista = Array.from({ length: noches }, (_, i) => sumarDias(entrada, i));
+  const tipos = lista.map((f) => tipoNoche(f, cfg).tipo);
+  if (tipos.includes("especial")) return "✨ ¡Fecha especial! Va a ser inolvidable.";
+  if (tipos.includes("puente") || lista.some((f) => esFestivo(f))) return "🎉 ¡Plan de puente! A celebrar en la montaña.";
+  if (noches >= 5) return `☕ ¡${noches} noches! Ya eres medio cafetero.`;
+  if (tipos.every((t) => t === "semana")) {
+    return noches === 1 ? "🌿 Una noche entre semana: el secreto mejor guardado." : "🌿 Escapada entre semana: pura tranquilidad.";
+  }
+  if (noches >= 3) return `😌 ¡${noches} noches! Así sí se descansa.`;
+  if (noches === 2 && tipos.includes("viernes")) return "⛰️ Fin de semana en la montaña. ¡Buena elección!";
+  if (noches === 1) return "🌙 Una noche para desconectarte.";
+  return "🙌 ¡Qué buen plan!";
+}
+
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
@@ -139,6 +158,10 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
         const noches = Math.round((aDate(salida).getTime() - aDate(entrada).getTime()) / 86_400_000);
         return (
           <div className="mb-3 rounded-[14px] bg-cafe/10 px-3 py-2 text-center">
+            {/* La clave hace que el mensaje vuelva a «saltar» cada vez que cambian las fechas. */}
+            <p key={`${entrada}-${salida}`} className="mensaje-pop mb-1 text-base font-extrabold">
+              {mensajeEstadia(entrada, noches, cfg)}
+            </p>
             <p className="text-sm font-extrabold text-cafe">
               🌙 {noches} {noches === 1 ? "noche" : "noches"}: llegas el {diaClaro(entrada)} y te vas el {diaClaro(salida, entrada)}
             </p>
