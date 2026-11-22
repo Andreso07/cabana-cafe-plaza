@@ -5,7 +5,9 @@ import { useEffect } from "react";
 /**
  * En el celular no hay mouse que pase por encima, así que los íconos de las tarjetas (`.icono-vivo`)
  * hacen su movimiento solos: al aparecer en pantalla y luego cada pocos segundos, uno tras otro,
- * mientras se vean. Los que no están en pantalla no se animan. Con «reducir movimiento», nada.
+ * mientras se vean. Los que no están en pantalla no se animan. En cada vuelta, la tarjeta del plan
+ * se mece también (sube y se inclina hacia las esquinas, como con el mouse en el computador); no en
+ * la primera, para no cortar la animación con la que aparece. Con «reducir movimiento», nada.
  */
 export function IconosEnMovimiento() {
   useEffect(() => {
@@ -13,13 +15,18 @@ export function IconosEnMovimiento() {
     if (!("IntersectionObserver" in window)) return;
 
     const relojes = new Set<ReturnType<typeof setTimeout>>();
-    const animar = (el: HTMLElement, retraso: number) => {
+    // Quitar y volver a poner la clase reinicia la animación.
+    const reiniciar = (el: Element | null) => {
+      if (!el) return;
+      el.classList.remove("animar");
+      void (el as HTMLElement).offsetWidth;
+      el.classList.add("animar");
+    };
+    const animar = (el: HTMLElement, retraso: number, conTarjeta = false) => {
       const reloj = setTimeout(() => {
         relojes.delete(reloj);
-        // Quitar y volver a poner la clase reinicia la animación.
-        el.classList.remove("animar");
-        void el.offsetWidth;
-        el.classList.add("animar");
+        reiniciar(el);
+        if (conTarjeta) reiniciar(el.closest(".tarjeta-plan"));
       }, retraso);
       relojes.add(reloj);
     };
@@ -42,7 +49,7 @@ export function IconosEnMovimiento() {
     document.querySelectorAll<HTMLElement>(".icono-vivo").forEach((el) => obs.observe(el));
 
     const intervalo = setInterval(() => {
-      [...visibles].forEach((el, i) => animar(el, i * 350));
+      [...visibles].forEach((el, i) => animar(el, i * 350, true));
     }, 4500);
 
     return () => {
