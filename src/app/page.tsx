@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Fragment } from "react";
 import { BotonPlan } from "@/components/BotonPlan";
 import { ProveedorReserva } from "@/components/EstadoReserva";
@@ -12,6 +13,7 @@ import { listarFotosCabana } from "@/lib/fotosCabana";
 import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { Ola } from "@/components/Ola";
 import { enlacesDelMapa } from "@/lib/mapa";
+import { comoScript, fichaDelAlojamiento } from "@/lib/datosEstructurados";
 import { AparecerAlBajar } from "@/components/AparecerAlBajar";
 import { IconoVivo } from "@/components/IconoVivo";
 import { IconosEnMovimiento } from "@/components/IconosEnMovimiento";
@@ -57,6 +59,8 @@ export default async function Inicio() {
 
   return (
     <main>
+      {/* Ficha para Google (no se ve): ver src/lib/datosEstructurados.ts */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: comoScript(fichaDelAlojamiento(cfg, opiniones)) }} />
       {/* Banner */}
       <section id="banner" className="relative h-[72vh] min-h-[440px] w-full">
         <Image
@@ -368,6 +372,9 @@ export default async function Inicio() {
                 </li>
               ))}
             </ul>
+            <Link href="/que-hacer-cerca" className="mt-4 inline-flex items-center gap-2 rounded-full border-2 border-cafe/20 bg-crema px-4 py-2 text-sm font-extrabold text-cafe hover:border-cafe/50">
+              🧭 Qué hacer cerca: Sandoná, Bomboná, cafetales…
+            </Link>
           </div>
           <div className="space-y-3">
             {/* Tocar la tarjeta abre Google Maps con la ruta desde donde esté la persona. */}

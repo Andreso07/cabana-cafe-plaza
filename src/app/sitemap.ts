@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   });
   return [
     pagina("/", 1, "daily"),
+    pagina("/que-hacer-cerca", 0.7, "monthly"),
     pagina("/fotos", 0.5, "weekly"),
     pagina("/resena", 0.5, "weekly"),
     pagina("/condiciones", 0.3, "monthly"),

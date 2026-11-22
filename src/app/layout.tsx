@@ -17,8 +17,10 @@ const baloo = Baloo_2({ variable: "--font-baloo", subsets: ["latin"], weight: ["
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await leerConfig();
-  const titulo = `${c.nombre} · ${c.municipio}, ${c.departamento}`;
-  const descripcion = `Cabaña entre cafetales en la ${c.vereda}, ${c.municipio}. Hasta ${c.capacidad} personas. Reserva en línea.`;
+  // Con las palabras que la gente escribe en Google («cabaña en Consacá», «cerca de Sandoná», «Pasto»).
+  // Título de menos de 60 letras y descripción de menos de 160, que es lo que Google muestra entero.
+  const titulo = `${c.nombre} · Cabaña en ${c.municipio}, ${c.departamento}`;
+  const descripcion = `Cabaña privada entre cafetales en ${c.municipio}, ${c.departamento}, cerca de Sandoná y Pasto. Hasta ${c.capacidad} personas, vista a las montañas y reserva en línea.`;
   // La vista previa al compartir el enlace (WhatsApp, Facebook): título, texto y la foto de
   // src/app/opengraph-image.jpg, que Next agrega sola.
   return {
@@ -93,6 +95,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               </span>
             </p>
             <nav className="flex flex-wrap items-center gap-4 font-semibold">
+              <Link href="/que-hacer-cerca" className="hover:underline">Qué hacer cerca</Link>
               <Link href="/resena" className="hover:underline">Deja tu reseña</Link>
               <Link href="/condiciones" className="hover:underline">Condiciones de reserva</Link>
               <Link href="/privacidad" className="hover:underline">Tratamiento de datos</Link>
