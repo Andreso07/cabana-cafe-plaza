@@ -148,10 +148,12 @@ body {
     .tarjeta-viva:hover .icono-vivo .emoji { animation: var(--anim-icono) 0.9s ease-out; }
     .tarjeta-viva:hover .icono-vivo .papelito { animation: papelito 0.8s ease-out; }
   }
-  @media (hover: none) {
-    .aparecer[data-aparecer="visible"] .icono-vivo .emoji { animation: var(--anim-icono) 0.9s 0.5s ease-out backwards; }
-    .aparecer[data-aparecer="visible"] .icono-vivo .papelito { animation: papelito 0.8s 0.5s ease-out; }
-  }
+  /* En el celular lo dispara IconosEnMovimiento.tsx poniendo la clase `animar`. */
+  .icono-vivo.animar .emoji { animation: var(--anim-icono) 0.9s ease-out; }
+  .icono-vivo.animar .papelito { animation: papelito 0.8s ease-out; }
+
+  /* La etiqueta «El más elegido» del plan destacado da un saltito cada 4 s. */
+  .insignia-salta { animation: saltito 4s 1s ease-in-out infinite; }
   .icono-vivo[data-anim="explota"] { --anim-icono: explota; }
   .icono-vivo[data-anim="late"] { --anim-icono: late; }
   .icono-vivo[data-anim="mece"] { --anim-icono: mece; }
@@ -228,28 +230,28 @@ body {
   100% { opacity: 0; transform: translate3d(10px, 105vh, 0) rotate(calc(var(--giro) + 620deg)); }
 }
 
-/* ---------- Modo Navidad (v0.11) ---------- */
-.luces-navidad .bombillo {
+/* ---------- Temporadas: Navidad y Halloween (v0.11 / v0.12) ---------- */
+.luces-temporada .bombillo {
   position: absolute; top: 3px; width: 8px; height: 11px; margin-left: -4px;
   border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
   background: var(--color-bombillo);
   box-shadow: 0 0 6px 1px var(--color-bombillo);
 }
-.luces-navidad .bombillo::before { /* el soquete */
+.luces-temporada .bombillo::before { /* el soquete */
   content: ""; position: absolute; top: -3px; left: 2px; width: 4px; height: 4px; border-radius: 1px; background: #2b4a28;
 }
-.luces-navidad .bombillo { --color-bombillo: #e53935; }
-.luces-navidad .bombillo[data-color="1"] { --color-bombillo: #43a047; }
-.luces-navidad .bombillo[data-color="2"] { --color-bombillo: #fbc02d; }
-.luces-navidad .bombillo[data-color="3"] { --color-bombillo: #1e88e5; }
+.luces-temporada .bombillo { --color-bombillo: #e53935; }
+.luces-temporada .bombillo[data-color="1"] { --color-bombillo: #43a047; }
+.luces-temporada .bombillo[data-color="2"] { --color-bombillo: #fbc02d; }
+.luces-temporada .bombillo[data-color="3"] { --color-bombillo: #1e88e5; }
 .nieve .copo { position: absolute; top: -30px; color: #b9d3ee; text-shadow: 0 0 2px #fff; opacity: 0.85; display: none; }
 
 @media (prefers-reduced-motion: no-preference) {
   /* Las luces se prenden y apagan por turnos. */
-  .luces-navidad .bombillo { animation: titilar 1.6s ease-in-out infinite; animation-delay: calc(var(--n) * 0.4s); }
+  .luces-temporada .bombillo { animation: titilar 1.6s ease-in-out infinite; animation-delay: calc(var(--n) * 0.4s); }
   /* La nieve solo cae con movimiento: quieta no aporta y tapa texto. */
   .nieve .copo { display: block; animation-name: nevar; animation-timing-function: linear; animation-iteration-count: infinite; }
-  .franja-navidad::after {
+  .franja-temporada::after {
     content: ""; position: absolute; inset: 0 auto 0 -40%; width: 30%; pointer-events: none;
     background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.25), transparent);
     animation: brillo-franja 5s 1s ease-in-out infinite;
@@ -273,4 +275,32 @@ body {
   4% { transform: translateY(-5px) rotate(-5deg); }
   8% { transform: translateY(0) rotate(4deg); }
   11% { transform: translateY(-2px) rotate(0); }
+}
+
+/* Halloween: luces naranja y moradas, y murciélagos que cruzan aleteando. */
+.luces-temporada[data-tema="halloween"] .bombillo { --color-bombillo: #ff7a00; }
+.luces-temporada[data-tema="halloween"] .bombillo[data-color="1"] { --color-bombillo: #9c4dcc; }
+.luces-temporada[data-tema="halloween"] .bombillo[data-color="2"] { --color-bombillo: #ffb300; }
+.luces-temporada[data-tema="halloween"] .bombillo[data-color="3"] { --color-bombillo: #7cb342; }
+.luces-temporada[data-tema="halloween"] .bombillo::before { background: #1b1b1b; }
+.murcielagos .murcielago { position: absolute; left: -40px; display: none; }
+.murcielagos .aleteo { display: inline-block; }
+@media (prefers-reduced-motion: no-preference) {
+  .murcielagos .murcielago { display: block; animation-name: volar; animation-timing-function: linear; animation-iteration-count: infinite; }
+  .murcielagos .aleteo { animation: aletear 0.35s ease-in-out infinite alternate; }
+}
+@keyframes volar {
+  0% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(28vw, -30px, 0); }
+  50% { transform: translate3d(55vw, 20px, 0); }
+  75% { transform: translate3d(85vw, -15px, 0); }
+  100% { transform: translate3d(calc(100vw + 80px), 10px, 0); }
+}
+@keyframes aletear { from { transform: scaleX(1) rotate(-6deg); } to { transform: scaleX(0.6) rotate(6deg); } }
+
+@keyframes saltito {
+  0%, 18%, 100% { transform: translateY(0) rotate(0); }
+  5% { transform: translateY(-7px) rotate(-3deg); }
+  10% { transform: translateY(0) rotate(2deg); }
+  14% { transform: translateY(-3px) rotate(0); }
 }

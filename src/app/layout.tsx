@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Ola } from "@/components/Ola";
 import { Baloo_2, Nunito } from "next/font/google";
 import { Clarity } from "@/components/Clarity";
-import { Navidad } from "@/components/Navidad";
+import { Temporada } from "@/components/Temporada";
 import { ContadorVisitas } from "@/components/ContadorVisitas";
 import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
@@ -29,13 +29,14 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
     `Hola, quiero información sobre ${cfg.nombre}`,
   )}`;
+  const temporada = cfg.temporada === "ninguna" ? null : cfg.temporada;
   const telefono = cfg.whatsapp.replace(/^57/, "").replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
   return (
     <html lang="es" className={`${nunito.variable} ${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
-        {cfg.modoNavidad && <Navidad parte="franja" mensaje={cfg.mensajeNavidad} />}
+        {temporada && <Temporada tema={temporada} parte="franja" mensaje={temporada === "navidad" ? cfg.mensajeNavidad : cfg.mensajeHalloween} />}
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-crema/90 border-b border-cafe/10">
-          {cfg.modoNavidad && <Navidad parte="luces" />}
+          {temporada && <Temporada tema={temporada} parte="luces" />}
           <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-3 flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-2.5 min-w-0">
               <Image
@@ -68,7 +69,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         </header>
 
         <div className="flex-1">{children}</div>
-        {cfg.modoNavidad && <Navidad parte="nieve" />}
+        {temporada && <Temporada tema={temporada} parte="cielo" />}
         <Clarity />
 
         <div className="mt-16">

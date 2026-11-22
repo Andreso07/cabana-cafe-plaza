@@ -56,6 +56,8 @@ export type Plan = {
   sugerir?: "ninguno" | "martes" | "viernes" | "sabado" | "domingo" | "puente" | "festivo";
 };
 
+export type Temporada = "ninguna" | "navidad" | "halloween";
+
 export type Config = {
   negocio: string;
   nombre: string;
@@ -118,9 +120,12 @@ export type Config = {
   googleIcalUrl: string;
   calendarioToken: string;
 
-  // Modo Navidad: nieve, luces bajo la barra y una franja con un mensaje. Se prende y apaga en el panel.
+  // Temporada: viste la web (franja con mensaje, luces bajo la barra y nieve o murciélagos). Se
+  // elige en el panel. `modoNavidad` es el interruptor de la v0.11, que se lee si no hay temporada.
+  temporada: Temporada;
   modoNavidad: boolean;
   mensajeNavidad: string;
+  mensajeHalloween: string;
 };
 
 export const CONFIG_INICIAL: Config = {
@@ -216,6 +221,8 @@ export const CONFIG_INICIAL: Config = {
   ],
   googleIcalUrl: "",
   calendarioToken: "",
+  temporada: "ninguna",
   modoNavidad: false,
   mensajeNavidad: "🎄 ¡Feliz Navidad! Celebra el fin de año entre cafetales y montañas",
+  mensajeHalloween: "🎃 ¡Feliz Halloween! Una noche de miedo (y de descanso) entre cafetales",
 };

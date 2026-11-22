@@ -17,7 +17,7 @@ import {
   alternarDescuento,
   guardarCalendario,
   guardarListas,
-  guardarNavidad,
+  guardarTemporada,
   guardarPlanes,
   guardarPrecios,
   guardarTextos,
@@ -43,7 +43,7 @@ const NOMBRES: Record<string, string> = {
   fechas: "Fechas especiales",
   descuentos: "Descuentos",
   codigos: "Códigos de colaboradores",
-  navidad: "Modo Navidad",
+  temporada: "Temporada",
 };
 
 function Tarjeta({ id, titulo, ayuda, children }: { id: string; titulo: string; ayuda?: string; children: React.ReactNode }) {
@@ -106,16 +106,28 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
       )}
 
       <Tarjeta
-        id="navidad"
-        titulo="🎄 Modo Navidad"
-        ayuda="Pone la web en modo Navidad: nieve que cae, luces de colores bajo la barra de arriba y una franja con tu mensaje. Apágalo cuando pase la temporada."
+        id="temporada"
+        titulo="🎉 Temporada"
+        ayuda="Viste la web para una fecha: una franja con tu mensaje, luces bajo la barra de arriba y nieve (Navidad) o murciélagos (Halloween). Vuelve a «Normal» cuando pase."
       >
-        <form action={guardarNavidad} className="grid gap-4 md:grid-cols-[auto_1fr_auto] items-end">
-          <label className="flex items-center gap-2 rounded-full border-2 border-black/10 bg-white px-4 py-2 text-sm font-extrabold has-[:checked]:border-cafe has-[:checked]:bg-cafe/10">
-            <input type="checkbox" name="modoNavidad" value="si" defaultChecked={cfg.modoNavidad} className="size-4 accent-[var(--cafe)]" />
-            Encender modo Navidad
-          </label>
-          <Campo nombre="mensajeNavidad" titulo="Mensaje de la franja" valor={cfg.mensajeNavidad} maxLength={120} />
+        <form action={guardarTemporada} className="grid gap-4 md:grid-cols-2 items-end">
+          <fieldset className="md:col-span-2 flex flex-wrap gap-2">
+            <legend className={`${etiqueta} mb-1.5`}>Modo de la web</legend>
+            {(
+              [
+                ["ninguna", "Normal"],
+                ["navidad", "🎄 Navidad"],
+                ["halloween", "🎃 Halloween"],
+              ] as const
+            ).map(([valor, nombre]) => (
+              <label key={valor} className="flex items-center gap-2 rounded-full border-2 border-black/10 bg-white px-4 py-2 text-sm font-extrabold has-[:checked]:border-cafe has-[:checked]:bg-cafe/10">
+                <input type="radio" name="temporada" value={valor} defaultChecked={cfg.temporada === valor} className="accent-[var(--cafe)]" />
+                {nombre}
+              </label>
+            ))}
+          </fieldset>
+          <Campo nombre="mensajeNavidad" titulo="Mensaje de Navidad" valor={cfg.mensajeNavidad} maxLength={120} ayuda="Sugerido: del 1 de diciembre al 7 de enero." />
+          <Campo nombre="mensajeHalloween" titulo="Mensaje de Halloween" valor={cfg.mensajeHalloween} maxLength={120} ayuda="Sugerido: del 20 al 31 de octubre." />
           <div><button className={guardarBtn}>Guardar</button></div>
         </form>
       </Tarjeta>

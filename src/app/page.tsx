@@ -13,6 +13,7 @@ import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { Ola } from "@/components/Ola";
 import { AparecerAlBajar } from "@/components/AparecerAlBajar";
 import { IconoVivo } from "@/components/IconoVivo";
+import { IconosEnMovimiento } from "@/components/IconosEnMovimiento";
 import { nombrePublico, resenasPublicas } from "@/lib/resenas";
 import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
@@ -171,7 +172,7 @@ export default async function Inicio() {
               }`}
             >
               {p.destacado && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-teja text-white text-[10px] font-black tracking-widest px-3 py-1 rounded-full shadow-[0_3px_0_var(--teja-oscura)]">
+                <span className="insignia-salta absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-teja text-white text-[10px] font-black tracking-widest px-3 py-1 rounded-full shadow-[0_3px_0_var(--teja-oscura)]">
                   ⭐ EL MÁS ELEGIDO ⭐
                 </span>
               )}
@@ -374,6 +375,7 @@ export default async function Inicio() {
           </a>
         </div>
       </section>
+      <IconosEnMovimiento />
     </main>
   );
 }

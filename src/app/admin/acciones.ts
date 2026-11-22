@@ -135,13 +135,18 @@ export async function desbloquear(form: FormData) {
 
 // ---------- Configuración ----------
 
-/** Prende o apaga el modo Navidad de la web y guarda el mensaje de la franja. */
-export async function guardarNavidad(form: FormData) {
-  await guardar("navidad", async () => {
-    const mensaje = texto(form, "mensajeNavidad", 120);
+/** Elige la temporada de la web (ninguna, Navidad, Halloween) y guarda el mensaje de cada franja. */
+export async function guardarTemporada(form: FormData) {
+  await guardar("temporada", async () => {
+    const elegida = texto(form, "temporada", 12);
+    const temporada = elegida === "navidad" || elegida === "halloween" ? elegida : "ninguna";
+    const navidad = texto(form, "mensajeNavidad", 120);
+    const halloween = texto(form, "mensajeHalloween", 120);
     return {
-      modoNavidad: form.get("modoNavidad") === "si",
-      ...(mensaje ? { mensajeNavidad: mensaje } : {}),
+      temporada,
+      modoNavidad: temporada === "navidad",
+      ...(navidad ? { mensajeNavidad: navidad } : {}),
+      ...(halloween ? { mensajeHalloween: halloween } : {}),
     };
   });
 }
