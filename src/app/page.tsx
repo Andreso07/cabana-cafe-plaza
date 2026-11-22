@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Fragment } from "react";
 import { BotonFlotanteReservar } from "@/components/BotonFlotanteReservar";
 import { BotonPlan } from "@/components/BotonPlan";
 import { ProveedorReserva } from "@/components/EstadoReserva";
@@ -11,6 +12,8 @@ import { fotosPublicas } from "@/lib/fotos";
 import { listarFotosCabana } from "@/lib/fotosCabana";
 import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { Ola } from "@/components/Ola";
+import { AparecerAlBajar } from "@/components/AparecerAlBajar";
+import { IconoVivo } from "@/components/IconoVivo";
 import { nombrePublico, resenasPublicas } from "@/lib/resenas";
 import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
@@ -42,6 +45,10 @@ export default async function Inicio() {
   ]);
 
 
+  // Palabras del título por separado, para animarlas una por una.
+  const titulo = cfg.heroTitulo.split(" ").filter(Boolean);
+  const destacado = cfg.heroDestacado.split(" ").filter(Boolean);
+
   // Los planes se editan en el panel (Configuración → Planes).
   const planes = cfg.planes;
 
@@ -60,9 +67,40 @@ export default async function Inicio() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-16 text-white">
           <Etiqueta>🏡 {cfg.vereda} · {cfg.municipio}</Etiqueta>
-          <h1 className="font-titulo mt-4 text-[40px] sm:text-[60px] leading-[0.95] font-extrabold tracking-tight">
-            {cfg.heroTitulo}
-            <span className="block text-sol">{cfg.heroDestacado}</span>
+          {/* Las palabras suben una por una y cada una del destacado se subraya como a mano (.titulo-vivo). */}
+          <h1 className="titulo-vivo font-titulo mt-4 text-[40px] sm:text-[60px] leading-[0.95] font-extrabold tracking-tight">
+            {titulo.map((palabra, i) => (
+              <Fragment key={i}>
+                <span className="palabra" style={{ animationDelay: `${i * 120}ms` }}>{palabra}</span>{" "}
+              </Fragment>
+            ))}
+            <span className="block text-sol">
+              {destacado.map((palabra, i) => (
+                <Fragment key={i}>
+                  <span className="palabra destacado" style={{ animationDelay: `${(titulo.length + i) * 120}ms` }}>
+                    {palabra}
+                    {/* Las palabras cortas («y», «de») van sin subrayado: una raya tan corta parece un error. */}
+                    {palabra.length > 2 && <svg viewBox="0 0 100 12" preserveAspectRatio="none" className="subrayado" aria-hidden>
+                      <path
+                        d="M3,8 C30,3 70,3 97,7"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="7"
+                        strokeLinecap="round"
+                        pathLength={100}
+                        style={{ animationDelay: `${900 + i * 250}ms` }}
+                      />
+                    </svg>}
+                    {/* Vapor de café que sube de la última palabra */}
+                    {i === destacado.length - 1 && (
+                      <span className="vapor" aria-hidden>
+                        <svg viewBox="0 0 30 40"><path d="M8,38 C2,30 14,24 8,16 C4,10 10,6 8,2" /><path d="M20,38 C14,30 26,24 20,16 C16,10 22,6 20,2" /></svg>
+                      </span>
+                    )}
+                  </span>{" "}
+                </Fragment>
+              ))}
+            </span>
           </h1>
           <p className="mt-3 max-w-[46ch] text-base sm:text-lg font-semibold text-white/90">{cfg.heroSubtitulo}</p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -93,19 +131,17 @@ export default async function Inicio() {
           </div>
           {/* Fotos justo después del banner: la gente decide si le gusta el lugar antes de mirar precios. */}
           <GaleriaCabana fotos={fotosCabana} nombre={cfg.nombre} />
-          <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
+          <AparecerAlBajar className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
             {cfg.servicios.map((s) => (
-              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
-                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
-                  {s.icono}
-                </span>
+              <div key={s.titulo} className="tarjeta-viva flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
+                <IconoVivo emoji={s.icono} className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" />
                 <span className="leading-tight min-w-0">
                   <span className="block font-extrabold text-sm">{s.titulo}</span>
                   <span className="block text-xs font-bold text-suave">{s.detalle}</span>
                 </span>
               </div>
             ))}
-          </div>
+          </AparecerAlBajar>
           {cfg.noIncluye.length > 0 && (
             <p className="mt-6 text-center text-sm font-bold text-suave">
               No incluye: {cfg.noIncluye.join(", ").toLowerCase()}.
@@ -127,11 +163,11 @@ export default async function Inicio() {
           </p>
         </div>
 
-        <div className="mt-12 grid md:grid-cols-3 gap-6 items-stretch">
+        <AparecerAlBajar className="mt-12 grid md:grid-cols-3 gap-6 items-stretch">
           {planes.map((p) => (
             <div
               key={p.id}
-              className={`relative rounded-[28px] border-[3px] bg-white p-6 flex flex-col text-tinta ${
+              className={`tarjeta-plan tarjeta-viva relative rounded-[28px] border-[3px] bg-white p-6 flex flex-col text-tinta ${
                 p.destacado ? "border-teja shadow-[0_12px_0_var(--teja)] md:-translate-y-1" : "border-white/20"
               }`}
             >
@@ -149,14 +185,12 @@ export default async function Inicio() {
                     <span className="text-xs font-bold text-suave">{p.unidad}</span>
                   </p>
                 </div>
-                <span
+                <IconoVivo
+                  emoji={p.icono}
                   className={`size-11 shrink-0 rounded-full grid place-items-center text-xl border-2 ${
                     p.destacado ? "bg-teja border-teja" : "bg-crema border-black/5"
                   }`}
-                  aria-hidden
-                >
-                  {p.icono}
-                </span>
+                />
               </div>
               <ul className="mt-4 space-y-2.5 flex-1">
                 {p.incluye.map((item) => (
@@ -173,7 +207,7 @@ export default async function Inicio() {
               />
             </div>
           ))}
-        </div>
+        </AparecerAlBajar>
 
         <div className="mt-8 bg-white/10 border-2 border-dashed border-sol/60 rounded-[18px] px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-[#7a4e00]">
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">👥 Hasta {cfg.capacidad} personas</span>
@@ -331,9 +365,9 @@ export default async function Inicio() {
             href={cfg.mapsUrl}
             target="_blank"
             rel="noopener"
-            className="flex items-center gap-3 rounded-[20px] bg-cafe text-white p-5 shadow-[0_6px_0_var(--cafe-oscuro)] hover:translate-y-px"
+            className="destello relative overflow-hidden flex items-center gap-3 rounded-[20px] bg-cafe text-white p-5 shadow-[0_6px_0_var(--cafe-oscuro)] hover:translate-y-px"
           >
-            <span className="text-3xl" aria-hidden>📍</span>
+            <span className="pin-salta text-3xl" aria-hidden>📍</span>
             <span>
               <span className="block font-titulo font-extrabold text-lg">Cómo llegar</span>
               <span className="block text-sm font-semibold text-white/85">{cfg.comoLlegar}</span>

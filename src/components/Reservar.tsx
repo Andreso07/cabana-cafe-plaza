@@ -147,7 +147,10 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
         />
       </div>
 
-      <div className="rounded-[28px] border-[3px] border-teja bg-white p-5 sm:p-6 shadow-[0_12px_0_var(--teja)] lg:sticky lg:top-24">
+      {/* Sin fechas, la tarjeta se agita de vez en cuando para invitar a elegirlas; con fechas, da un salto. */}
+      <div
+        className={`rounded-[28px] border-[3px] border-teja bg-white p-5 sm:p-6 shadow-[0_12px_0_var(--teja)] lg:sticky lg:top-24 ${cot ? "tarjeta-lista" : "tarjeta-agitada"}`}
+      >
         <p className="text-[11px] font-black tracking-widest text-teja/70">TU RESERVA</p>
         {!cot ? (
           <div className="mt-2 text-suave">

@@ -55,7 +55,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               href={whatsapp}
               target="_blank"
               rel="noopener"
-              className="boton-whatsapp shrink-0 flex items-center gap-2 bg-[#25D366] text-white font-extrabold text-sm px-4 py-2.5 rounded-full"
+              className="boton-whatsapp palpito shrink-0 flex items-center gap-2 bg-[#25D366] text-white font-extrabold text-sm px-4 py-2.5 rounded-full"
             >
               <span aria-hidden>💬</span>
               <span className="hidden sm:inline">WhatsApp {telefono}</span>

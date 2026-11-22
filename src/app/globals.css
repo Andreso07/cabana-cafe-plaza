@@ -70,3 +70,146 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .boton-goma, .boton-whatsapp { transition: none; }
 }
+
+/* ---------- Movimiento ----------
+   Todo es CSS y dura menos de un segundo, salvo el vapor. Quien pide «reducir movimiento» en su
+   teléfono ve la página quieta: todo esto va dentro de este bloque. */
+
+/* Título del banner: el subrayado del destacado siempre está; el vapor solo con movimiento. */
+.titulo-vivo .destacado { position: relative; display: inline-block; }
+.titulo-vivo .subrayado {
+  position: absolute; left: 0; bottom: -0.12em; width: 100%; height: 0.22em;
+  color: var(--teja); overflow: visible;
+}
+.titulo-vivo .vapor { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Tarjetas de planes: saltan, se inclinan y el ícono gira. Solo con mouse. */
+  @media (hover: hover) {
+    .tarjeta-plan { transition: transform 0.3s cubic-bezier(0.3, 1.6, 0.5, 1), border-color 0.2s; }
+    .tarjeta-plan:hover { transform: translateY(-8px) rotate(-1deg); border-color: var(--teja); }
+  }
+
+  /* Aparecen subiendo una tras otra al llegar a ellas (lo que se ve en el celular). La animación no
+     se queda «pegada» al terminar (backwards), para que el salto de arriba siga funcionando. */
+  .aparecer[data-aparecer="esperando"] > * { opacity: 0; }
+  .aparecer[data-aparecer="visible"] > * { animation: subir 0.6s cubic-bezier(0.2, 1, 0.4, 1) backwards; }
+  .aparecer[data-aparecer="visible"] > :nth-child(2) { animation-delay: 0.12s; }
+  .aparecer[data-aparecer="visible"] > :nth-child(3) { animation-delay: 0.24s; }
+  .aparecer[data-aparecer="visible"] > :nth-child(4) { animation-delay: 0.36s; }
+  .aparecer[data-aparecer="visible"] > :nth-child(n + 5) { animation-delay: 0.48s; }
+
+  /* Calendario: el día crece al pasar el mouse, la llegada y la salida dan un «pop» y las noches
+     se pintan una tras otra (el retraso de cada una lo pone Calendario.tsx). */
+  @media (hover: hover) {
+    .dia-cal { transition: transform 0.2s cubic-bezier(0.3, 1.8, 0.5, 1), background-color 0.15s, border-color 0.15s; }
+    .dia-cal:not(:disabled):hover { transform: scale(1.15) rotate(-4deg); z-index: 1; }
+  }
+  .dia-pop { animation: pop 0.35s cubic-bezier(0.3, 1.8, 0.5, 1); }
+  .dia-ola { animation: subir 0.4s cubic-bezier(0.2, 1, 0.4, 1) backwards; }
+
+  /* Título: palabras que suben, subrayado que se dibuja y vapor de café. */
+  .titulo-vivo .palabra { display: inline-block; animation: subir 0.6s cubic-bezier(0.2, 1, 0.4, 1) backwards; }
+  .titulo-vivo .subrayado path { stroke-dasharray: 100; stroke-dashoffset: 100; animation: trazar 0.5s ease-out forwards; }
+  .titulo-vivo .vapor {
+    display: block; position: absolute; right: -0.5em; top: -0.5em; width: 0.45em; height: 0.65em;
+    color: rgb(255 255 255 / 0.75);
+  }
+  .titulo-vivo .vapor svg { width: 100%; height: 100%; overflow: visible; }
+  .titulo-vivo .vapor path { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; opacity: 0; animation: vapor 3s 1.6s ease-in-out infinite; }
+  .titulo-vivo .vapor path + path { animation-delay: 2.6s; }
+}
+
+@keyframes subir { from { opacity: 0; transform: translateY(18px); } }
+@keyframes pop { 0% { transform: scale(0.6); } 100% { transform: scale(1); } }
+@keyframes trazar { to { stroke-dashoffset: 0; } }
+@keyframes vapor {
+  0% { opacity: 0; transform: translateY(6px); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-14px); }
+}
+
+/* ---------- Más movimiento (v0.9) ---------- */
+
+/* Confeti de la fiesta: escondido hasta que el ícono «explota». */
+.icono-vivo .papelito {
+  position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 2px;
+  opacity: 0; pointer-events: none;
+  background: var(--sol);
+}
+.icono-vivo .papelito:nth-child(3n) { background: var(--teja); }
+.icono-vivo .papelito:nth-child(3n + 1) { background: #4f9de0; border-radius: 50%; }
+.boton-whatsapp.palpito, .red-viva { position: relative; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Cada ícono hace lo suyo: con el mouse encima de la tarjeta (computador) o una vez al aparecer
+     (celular, donde no hay mouse). */
+  @media (hover: hover) {
+    .tarjeta-viva:hover .icono-vivo .emoji { animation: var(--anim-icono) 0.9s ease-out; }
+    .tarjeta-viva:hover .icono-vivo .papelito { animation: papelito 0.8s ease-out; }
+  }
+  @media (hover: none) {
+    .aparecer[data-aparecer="visible"] .icono-vivo .emoji { animation: var(--anim-icono) 0.9s 0.5s ease-out backwards; }
+    .aparecer[data-aparecer="visible"] .icono-vivo .papelito { animation: papelito 0.8s 0.5s ease-out; }
+  }
+  .icono-vivo[data-anim="explota"] { --anim-icono: explota; }
+  .icono-vivo[data-anim="late"] { --anim-icono: late; }
+  .icono-vivo[data-anim="mece"] { --anim-icono: mece; }
+  .icono-vivo[data-anim="humea"] { --anim-icono: humea; }
+  .icono-vivo[data-anim="rebota"] { --anim-icono: rebota; }
+  .icono-vivo[data-anim="sube"] { --anim-icono: sube; }
+  .icono-vivo[data-anim="parpadea"] { --anim-icono: parpadea; }
+  .icono-vivo[data-anim="tiembla"] { --anim-icono: tiembla; }
+  .icono-vivo[data-anim="avanza"] { --anim-icono: avanza; }
+  .icono-vivo[data-anim="gira"] { --anim-icono: gira; }
+
+  /* «Tu reserva» sin fechas: cada 5 s se agita hacia los lados, como diciendo «aquí estoy». */
+  .tarjeta-agitada { animation: agitar 5s 2s ease-in-out infinite; }
+  .tarjeta-lista { animation: pop 0.4s cubic-bezier(0.3, 1.8, 0.5, 1); }
+
+  /* WhatsApp: una onda verde que sale del botón y se desvanece, como un latido. */
+  .boton-whatsapp.palpito::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 0 rgb(37 211 102 / 0.7);
+    animation: onda 2.2s ease-out infinite;
+  }
+
+  /* Redes sociales: un latido corto cada 3 s. */
+  .red-viva { animation: latido 3s ease-in-out infinite; }
+
+  /* «Cómo llegar»: un destello que cruza la tarjeta y el pin que salta. */
+  .destello::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.35), transparent);
+    transform: skewX(-20deg);
+    animation: destello 4s 1s ease-in-out infinite;
+  }
+  .pin-salta { display: inline-block; animation: pin 4s 1s ease-in-out infinite; }
+}
+
+@keyframes papelito {
+  0% { opacity: 1; transform: rotate(calc(var(--i) * 45deg)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(calc(var(--i) * 45deg + 30deg)) translateY(-34px) scale(0.6); }
+}
+@keyframes explota { 0% { transform: scale(1); } 25% { transform: scale(0.7) rotate(-10deg); } 50% { transform: scale(1.45) rotate(12deg); } 100% { transform: scale(1); } }
+@keyframes late { 0%, 40%, 100% { transform: scale(1); } 15% { transform: scale(1.35); } 30% { transform: scale(1.1); } 50% { transform: scale(1.3); } }
+@keyframes mece { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-18deg); } 50% { transform: rotate(14deg); } 75% { transform: rotate(-8deg); } }
+@keyframes humea { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-6px) rotate(-12deg); } 60% { transform: translateY(-2px) rotate(8deg); } }
+@keyframes rebota { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-12px) scaleY(1.05); } 50% { transform: translateY(0) scaleY(0.85); } 70% { transform: translateY(-5px); } }
+@keyframes sube { 0% { transform: translateY(0); } 40% { transform: translateY(-8px) scale(1.2); } 100% { transform: translateY(0); } }
+@keyframes parpadea { 0%, 100% { opacity: 1; } 20%, 60% { opacity: 0.2; } 40%, 80% { opacity: 1; transform: scale(1.15); } }
+@keyframes tiembla { 0%, 100% { transform: translateX(0); } 10%, 50%, 90% { transform: translateX(-3px) rotate(-4deg); } 30%, 70% { transform: translateX(3px) rotate(4deg); } }
+@keyframes avanza { 0% { transform: translateX(0); } 40% { transform: translateX(14px); opacity: 0; } 41% { transform: translateX(-14px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+@keyframes gira { to { transform: rotate(360deg); } }
+@keyframes agitar {
+  0%, 12%, 100% { transform: translateX(0) rotate(0); }
+  2% { transform: translateX(-8px) rotate(-1.5deg); }
+  4% { transform: translateX(7px) rotate(1.5deg); }
+  6% { transform: translateX(-5px) rotate(-1deg); }
+  8% { transform: translateX(4px) rotate(0.5deg); }
+  10% { transform: translateX(-2px); }
+}
+@keyframes onda { 0% { box-shadow: 0 0 0 0 rgb(37 211 102 / 0.7); } 70%, 100% { box-shadow: 0 0 0 14px rgb(37 211 102 / 0); } }
+@keyframes latido { 0%, 30%, 100% { transform: scale(1); } 8% { transform: scale(1.2); } 16% { transform: scale(1); } 22% { transform: scale(1.15); } }
+@keyframes destello { 0% { left: -60%; } 30%, 100% { left: 130%; } }
+@keyframes pin { 0%, 20%, 100% { transform: translateY(0); } 8% { transform: translateY(-10px); } 14% { transform: translateY(0); } 17% { transform: translateY(-4px); } }

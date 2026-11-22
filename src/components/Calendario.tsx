@@ -183,9 +183,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                 // para no confundirse con ninguno de los dos.
                 let clase = "bg-libre border-libre-borde text-libre-texto hover:border-libre-texto";
                 // Llegada rellena y salida solo con borde: a la vista no parecen dos noches.
-                if (esEntrada) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)]";
-                else if (esSalida) clase = "bg-white text-teja border-teja border-dashed";
-                else if (enRango) clase = "bg-sol/30 border-sol";
+                if (esEntrada) clase = "bg-teja text-white border-teja shadow-[0_3px_0_var(--teja-oscura)] dia-pop";
+                else if (esSalida) clase = "bg-white text-teja border-teja border-dashed dia-pop";
+                else if (enRango) clase = "bg-sol/30 border-sol dia-ola";
                 else if (pasado) clase = "bg-black/[0.03] border-transparent text-black/20";
                 else if (ocupada && puedeSerSalida) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto hover:border-ocupado-texto";
                 else if (ocupada) clase = "bg-ocupado border-ocupado-borde text-ocupado-texto line-through";
@@ -199,7 +199,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                     type="button"
                     disabled={deshabilitado}
                     onClick={() => clic(f)}
-                    className={`relative aspect-square rounded-[12px] border-2 flex flex-col items-center justify-center text-sm font-extrabold transition-colors disabled:cursor-not-allowed ${clase}`}
+                    className={`dia-cal relative aspect-square rounded-[12px] border-2 flex flex-col items-center justify-center text-sm font-extrabold transition-colors disabled:cursor-not-allowed ${clase}`}
+                    // Las noches se pintan una tras otra, como una ola que va de la llegada a la salida.
+                    style={enRango ? { animationDelay: `${Math.min((Date.parse(f) - Date.parse(entrada)) / 86_400_000, 14) * 45}ms` } : undefined}
                     aria-label={`${f}${ocupada ? ", ocupado" : ""}${sinServicio ? ", sin servicio" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
                     title={especial ? noche.nombre : undefined}
                     aria-pressed={esEntrada || esSalida}

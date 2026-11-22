@@ -32,7 +32,7 @@ export function Redes({ redes, grande = false }: { redes: Config["redes"]; grand
           rel="noopener"
           aria-label={`${ICONOS[k].nombre} de la cabaña`}
           title={ICONOS[k].nombre}
-          className={`grid place-items-center rounded-full bg-white border-2 border-black/5 hover:border-black/20 ${grande ? "size-12" : "size-9"}`}
+          className={`red-viva grid place-items-center rounded-full bg-white border-2 border-black/5 hover:border-black/20 ${grande ? "size-12" : "size-9"}`}
         >
           <svg viewBox="0 0 24 24" className={grande ? "size-6" : "size-5"} fill={ICONOS[k].color} aria-hidden>
             <path d={ICONOS[k].d} />
