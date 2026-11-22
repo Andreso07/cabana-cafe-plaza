@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LIMITES } from "@/config/cabana";
 import { formatoLargo, sumarDias } from "@/lib/fechas";
-import { cotizar, pesos, type CodigoAplicable, type ConfigPrecios } from "@/lib/precios";
+import { cotizar, nocheCerrada, pesos, type CodigoAplicable, type ConfigPrecios } from "@/lib/precios";
 import { Calendario } from "./Calendario";
 import { useReserva } from "./EstadoReserva";
 
@@ -16,7 +16,20 @@ export type ConfigReserva = ConfigPrecios & {
   checkIn: string;
   checkOut: string;
   requisitos: string;
+  nombre: string; // para el mensaje de «Compartir con mi grupo»
+  lugar: string;
 };
+
+/** Fechas que llegan en un enlace compartido (?llegada=2026-12-12&salida=2026-12-14), si son válidas. */
+function fechasDelEnlace(): { llegada: string; salida: string } | null {
+  const p = new URLSearchParams(window.location.search);
+  const llegada = p.get("llegada") ?? "";
+  const salida = p.get("salida") ?? "";
+  const fecha = /^\d{4}-\d{2}-\d{2}$/;
+  if (!fecha.test(llegada) || !fecha.test(salida) || salida <= llegada) return null;
+  if (Number.isNaN(Date.parse(llegada)) || Number.isNaN(Date.parse(salida))) return null;
+  return { llegada, salida };
+}
 
 const campo =
   "mt-1 w-full rounded-[14px] border-2 border-black/[0.06] bg-crema px-3.5 py-2.5 font-semibold outline-none focus:border-teja focus:bg-white";
@@ -24,10 +37,11 @@ const campo =
 export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigReserva }) {
   const router = useRouter();
   // Disponibilidad y fechas elegidas viven en <ProveedorReserva>: los planes también las usan.
-  const { disp, ocupadas, errorCarga, cargar, entrada, salida, elegir, foco } = useReserva();
+  const { disp, ocupadas, errorCarga, cargar, entrada, salida, elegir, elegirDesdePlan, foco } = useReserva();
   const [huespedes, setHuespedes] = useState(2);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [avisoEnlace, setAvisoEnlace] = useState<string | null>(null);
 
   // Código de colaborador: el servidor dice si vale y cuánto; aquí solo se muestra el precio.
   const [abrirCodigo, setAbrirCodigo] = useState(false);
@@ -74,6 +88,41 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
       void aplicarCodigo(deLaDireccion);
     }
   }, []);
+
+  // Enlace compartido por alguien del grupo: cuando ya se sabe qué está ocupado, se marcan esas
+  // fechas si siguen libres. Si no, se avisa. Una sola vez por visita.
+  const enlaceRevisado = useRef(false);
+  useEffect(() => {
+    if (!disp || enlaceRevisado.current) return;
+    enlaceRevisado.current = true;
+    const f = fechasDelEnlace();
+    if (!f) return;
+    let libres = f.llegada >= disp.hoy && Date.parse(f.salida) - Date.parse(f.llegada) <= 30 * 86_400_000;
+    for (let d = f.llegada; libres && d < f.salida; d = sumarDias(d, 1)) {
+      if (ocupadas.has(d) || nocheCerrada(d, cfg)) libres = false;
+    }
+    if (libres) {
+      elegirDesdePlan(f.llegada, f.salida);
+      document.getElementById("reservar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAvisoEnlace("😕 Las fechas que te compartieron ya no están disponibles. Elige otras en el calendario.");
+    }
+  }, [disp, ocupadas, cfg, elegirDesdePlan]);
+
+  /** Abre WhatsApp con un mensaje para mandarle a la pareja o al grupo, con el enlace a esas fechas. */
+  function compartir() {
+    if (!cot || !entrada || !salida) return;
+    const enlace = `${window.location.origin}/?llegada=${entrada}&salida=${salida}#reservar`;
+    const noches = cot.noches.length;
+    const texto = [
+      `¿Nos vamos? 🏡☕ ${cfg.nombre}, en ${cfg.lugar}`,
+      `📅 Del ${formatoLargo(entrada)} al ${formatoLargo(salida)} (${noches} ${noches === 1 ? "noche" : "noches"})`,
+      `👥 ${huespedes} ${huespedes === 1 ? "persona" : "personas"} · ${pesos(cot.total)} en total`,
+      `Mira las fechas aquí: ${enlace}`,
+    ].join("\n");
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+  }
 
   const cot = entrada && salida ? cotizar(entrada, salida, cfg, huespedes, codigo) : null;
   const muyCorta = cot ? cot.noches.length < cot.minNoches : false;
@@ -157,6 +206,11 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
             <p className="font-titulo text-[28px] font-extrabold text-tinta leading-none">
               Desde {pesos(desde)} <span className="text-base font-sans font-bold text-suave">/ noche</span>
             </p>
+            {avisoEnlace && (
+              <p className="mt-3 rounded-[14px] bg-teja/10 px-3 py-2 text-sm font-bold text-teja-oscura" role="alert">
+                {avisoEnlace}
+              </p>
+            )}
             <p className="mt-3 text-sm font-semibold">
               📅 Elige en el calendario el día de llegada y el de salida para ver el total y llenar tus datos.
             </p>
@@ -293,6 +347,15 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
                 <span>{pesos(cot.saldo)}</span>
               </p>
             </div>
+
+            {/* Muchas escapadas se deciden entre dos o más: se manda el plan al grupo antes de reservar. */}
+            <button
+              type="button"
+              onClick={compartir}
+              className="boton-whatsapp flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-extrabold text-white"
+            >
+              <span aria-hidden>💬</span> Compartir con mi pareja o grupo
+            </button>
 
             {muyCorta ? (
               <p className="text-sm text-teja-oscura" role="alert">

@@ -136,8 +136,11 @@ export default async function Inicio() {
           <GaleriaCabana fotos={fotosCabana} nombre={cfg.nombre} />
           <AparecerAlBajar className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
             {cfg.servicios.map((s) => (
-              <div key={s.titulo} className="tarjeta-viva flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
-                <IconoVivo emoji={s.icono} className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" />
+              <div key={s.titulo} className="flex gap-3 items-center bg-crema border-2 border-black/[0.05] rounded-[20px] p-4 shadow-[0_3px_0_rgba(0,0,0,0.04)]">
+                {/* Íconos de servicios quietos: el movimiento queda para los planes. */}
+                <span className="size-11 shrink-0 rounded-full bg-white border border-black/5 grid place-items-center text-xl" aria-hidden>
+                  {s.icono}
+                </span>
                 <span className="leading-tight min-w-0">
                   <span className="block font-extrabold text-sm">{s.titulo}</span>
                   <span className="block text-xs font-bold text-suave">{s.detalle}</span>
@@ -259,6 +262,8 @@ export default async function Inicio() {
               checkIn: cfg.checkIn,
               checkOut: cfg.checkOut,
               requisitos: cfg.requisitos,
+              nombre: cfg.nombre,
+              lugar: `${cfg.municipio}, ${cfg.departamento}`,
             }}
           />
         </div>

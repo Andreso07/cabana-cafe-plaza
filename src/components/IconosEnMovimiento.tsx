@@ -4,10 +4,9 @@ import { useEffect } from "react";
 
 /**
  * En el celular no hay mouse que pase por encima, así que los íconos de las tarjetas (`.icono-vivo`)
- * hacen su movimiento solos: al aparecer en pantalla y luego cada pocos segundos, uno tras otro,
- * mientras se vean. Los que no están en pantalla no se animan. En cada vuelta, la tarjeta del plan
- * se mece también (sube y se inclina hacia las esquinas, como con el mouse en el computador); no en
- * la primera, para no cortar la animación con la que aparece. Con «reducir movimiento», nada.
+ * hacen su movimiento solos, una sola vez: la primera vez que aparecen en pantalla en esa visita. La
+ * tarjeta del plan se mece con su ícono (sube y se inclina hacia las esquinas, como con el mouse en el
+ * computador), después de que termina de aparecer. Con «reducir movimiento», nada.
  */
 export function IconosEnMovimiento() {
   useEffect(() => {
@@ -31,30 +30,25 @@ export function IconosEnMovimiento() {
       relojes.add(reloj);
     };
 
-    const visibles = new Set<HTMLElement>();
+    // Cada ícono se anima una vez: al verlo, se deja de observar.
+    let enCola = 0;
     const obs = new IntersectionObserver(
       (entradas) => {
         for (const e of entradas) {
+          if (!e.isIntersecting) continue;
           const el = e.target as HTMLElement;
-          if (e.isIntersecting && !visibles.has(el)) {
-            visibles.add(el);
-            animar(el, 250);
-          } else if (!e.isIntersecting) {
-            visibles.delete(el);
-          }
+          obs.unobserve(el);
+          // Espera a que la tarjeta termine de subir (≈1 s) y escalona las que entran juntas.
+          animar(el, 1000 + (enCola++ % 4) * 350, true);
+          setTimeout(() => (enCola = Math.max(0, enCola - 1)), 1500);
         }
       },
       { threshold: 0.6 },
     );
     document.querySelectorAll<HTMLElement>(".icono-vivo").forEach((el) => obs.observe(el));
 
-    const intervalo = setInterval(() => {
-      [...visibles].forEach((el, i) => animar(el, i * 350, true));
-    }, 4500);
-
     return () => {
       obs.disconnect();
-      clearInterval(intervalo);
       relojes.forEach(clearTimeout);
     };
   }, []);
