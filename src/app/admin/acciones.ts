@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
-import { cerrarSesion, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
+import { cerrarSesion, cerrarTodasLasSesiones, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida, hoyEnColombia } from "@/lib/fechas";
 import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
@@ -84,7 +84,7 @@ export async function entrar(form: FormData) {
 }
 
 export async function salir() {
-  await cerrarSesion();
+  await cerrarTodasLasSesiones();
   redirect("/admin/entrar");
 }
 

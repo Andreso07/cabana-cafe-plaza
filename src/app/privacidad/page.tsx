@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { leerConfig } from "@/lib/config";
 
+export const metadata = { title: "Tratamiento de datos · Cabaña Café Plaza" };
+
 export const dynamic = "force-dynamic";
 
 // Basada en la Ley 1581 de 2012. El responsable y el correo se completan en el panel.

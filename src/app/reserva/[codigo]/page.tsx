@@ -11,6 +11,10 @@ import { Refrescar, ReportarPago, SimularPago } from "./acciones";
 
 export const dynamic = "force-dynamic";
 
+// Una reserva lleva el nombre y las fechas del cliente: no se muestra en buscadores ni se
+// presenta como vista previa al compartir el enlace.
+export const metadata = { title: "Tu reserva · Cabaña Café Plaza", robots: { index: false, follow: false } };
+
 export default async function PaginaReserva({ params }: PageProps<"/reserva/[codigo]">) {
   const { codigo } = await params;
   const [r, cfg] = await Promise.all([obtenerReserva(codigo), leerConfig()]);

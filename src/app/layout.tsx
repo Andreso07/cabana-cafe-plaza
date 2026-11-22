@@ -9,6 +9,7 @@ import { ContadorVisitas } from "@/components/ContadorVisitas";
 import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
 import { cifrasVisitas } from "@/lib/resenas";
+import { URL_SITIO } from "@/lib/sitio";
 import "./globals.css";
 
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
@@ -16,9 +17,16 @@ const baloo = Baloo_2({ variable: "--font-baloo", subsets: ["latin"], weight: ["
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await leerConfig();
+  const titulo = `${c.nombre} · ${c.municipio}, ${c.departamento}`;
+  const descripcion = `Cabaña entre cafetales en la ${c.vereda}, ${c.municipio}. Hasta ${c.capacidad} personas. Reserva en línea.`;
+  // La vista previa al compartir el enlace (WhatsApp, Facebook): título, texto y la foto de
+  // src/app/opengraph-image.jpg, que Next agrega sola.
   return {
-    title: `${c.nombre} · ${c.municipio}, ${c.departamento}`,
-    description: `Cabaña entre cafetales en la ${c.vereda}, ${c.municipio}. Hasta ${c.capacidad} personas. Reserva en línea.`,
+    metadataBase: new URL(URL_SITIO),
+    title: titulo,
+    description: descripcion,
+    openGraph: { title: titulo, description: descripcion, siteName: c.nombre, locale: "es_CO", type: "website", url: "/" },
+    twitter: { card: "summary_large_image", title: titulo, description: descripcion },
   };
 }
 

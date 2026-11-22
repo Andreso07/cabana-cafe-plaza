@@ -135,3 +135,13 @@ create table if not exists fotos_cabana (
 );
 create index if not exists fotos_cabana_orden_idx on fotos_cabana (orden);
 alter table fotos_cabana enable row level security;
+
+-- Panel: desde cuándo valen las sesiones. La cookie del panel es firmada y no se guarda en la base;
+-- al tocar «Salir» se mueve esta hora a ahora y toda sesión que empezó antes deja de servir, aunque
+-- alguien hubiera copiado la cookie. Una sola fila.
+create table if not exists panel_sesiones (
+  id            integer primary key default 1 check (id = 1),
+  validas_desde timestamptz not null default to_timestamp(0)
+);
+insert into panel_sesiones (id) values (1) on conflict (id) do nothing;
+alter table panel_sesiones enable row level security;
