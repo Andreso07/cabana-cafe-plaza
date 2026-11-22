@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Ola } from "@/components/Ola";
 import { Baloo_2, Nunito } from "next/font/google";
 import { Clarity } from "@/components/Clarity";
 import { ContadorVisitas } from "@/components/ContadorVisitas";
@@ -66,8 +67,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <div className="flex-1">{children}</div>
         <Clarity />
 
-        <footer className="border-t-[3px] border-cafe/10 mt-16 bg-white">
-          <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-8 text-sm text-suave flex flex-col gap-2 sm:flex-row sm:justify-between">
+        <div className="mt-16">
+          <Ola fondo="bg-crema" color="text-cafe-oscuro" />
+        </div>
+        <footer className="bg-cafe-oscuro">
+          <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-8 text-sm text-white/80 flex flex-col gap-2 sm:flex-row sm:justify-between">
             <p className="font-semibold">
               {cfg.nombre} · {cfg.negocio} · {cfg.vereda}, {cfg.municipio}, {cfg.departamento}
               {cfg.rnt && <> · RNT {cfg.rnt}</>}

@@ -17,6 +17,7 @@
   --ocupado-texto: #b42318;
   --sol: #f5b63f;
   --linea: #ece3d6;
+  --arena: #f6ead7;
 }
 
 @theme inline {
@@ -35,6 +36,7 @@
   --color-ocupado-texto: var(--ocupado-texto);
   --color-sol: var(--sol);
   --color-linea: var(--linea);
+  --color-arena: var(--arena);
   --font-sans: var(--font-nunito);
   --font-titulo: var(--font-baloo);
 }

@@ -10,6 +10,7 @@ import { pesos } from "@/lib/precios";
 import { fotosPublicas } from "@/lib/fotos";
 import { listarFotosCabana } from "@/lib/fotosCabana";
 import { GaleriaCabana } from "@/components/GaleriaCabana";
+import { Ola } from "@/components/Ola";
 import { nombrePublico, resenasPublicas } from "@/lib/resenas";
 import { sugerenciaDe } from "@/lib/sugerencias";
 import { wompiConfigurado } from "@/lib/wompi";
@@ -17,11 +18,12 @@ import { wompiConfigurado } from "@/lib/wompi";
 // Lee precios y textos de la base en cada visita: un cambio en el panel se ve al instante.
 export const dynamic = "force-dynamic";
 
-function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono?: "teja" | "cafe" | "suave" }) {
+function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono?: "teja" | "cafe" | "suave" | "sol" }) {
   const estilos = {
     teja: "bg-teja text-white shadow-[0_3px_0_var(--teja-oscura)]",
     cafe: "bg-cafe/15 text-cafe",
     suave: "bg-teja/10 text-teja",
+    sol: "bg-sol text-tinta",
   }[tono];
   return (
     <span className={`inline-flex items-center gap-2 font-extrabold text-[11px] tracking-[0.14em] uppercase px-3.5 py-1.5 rounded-full ${estilos}`}>
@@ -83,7 +85,7 @@ export default async function Inicio() {
       </section>
 
       {/* Fotos de la cabaña y servicios */}
-      <section id="servicios" className="scroll-mt-20 bg-white border-b-[3px] border-cafe/10">
+      <section id="servicios" className="scroll-mt-20 bg-white">
         <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
           <div className="text-center max-w-[640px] mx-auto">
             <Etiqueta tono="cafe">☕ Lo que vas a encontrar</Etiqueta>
@@ -113,12 +115,14 @@ export default async function Inicio() {
       </section>
 
       <ProveedorReserva>
-      {/* Planes */}
-      <section id="planes" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+      {/* Planes, en franja verde cafetal: al bajar, el cambio de color marca que empieza otra parte. */}
+      <Ola fondo="bg-white" color="text-cafe-oscuro" />
+      <section id="planes" className="scroll-mt-20 bg-cafe-oscuro text-white">
+      <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-10 md:py-14">
         <div className="text-center max-w-[640px] mx-auto">
-          <Etiqueta tono="suave">🌿 Nuestros planes</Etiqueta>
+          <Etiqueta tono="sol">🌿 Nuestros planes</Etiqueta>
           <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Elige tu escapada</h2>
-          <p className="mt-3 text-sm md:text-[15px] font-bold text-suave">
+          <p className="mt-3 text-sm md:text-[15px] font-bold text-white/80">
             Precios por la cabaña completa, no por persona. Pulsa un plan y te marcamos las próximas fechas libres en el calendario.
           </p>
         </div>
@@ -127,8 +131,8 @@ export default async function Inicio() {
           {planes.map((p) => (
             <div
               key={p.id}
-              className={`relative rounded-[28px] border-[3px] bg-white p-6 flex flex-col ${
-                p.destacado ? "border-teja shadow-[0_12px_0_var(--teja)] md:-translate-y-1" : "border-black/10"
+              className={`relative rounded-[28px] border-[3px] bg-white p-6 flex flex-col text-tinta ${
+                p.destacado ? "border-teja shadow-[0_12px_0_var(--teja)] md:-translate-y-1" : "border-white/20"
               }`}
             >
               {p.destacado && (
@@ -171,7 +175,7 @@ export default async function Inicio() {
           ))}
         </div>
 
-        <div className="mt-8 bg-sol/20 border-2 border-dashed border-sol/50 rounded-[18px] px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-[#7a4e00]">
+        <div className="mt-8 bg-white/10 border-2 border-dashed border-sol/60 rounded-[18px] px-4 py-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-[#7a4e00]">
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">👥 Hasta {cfg.capacidad} personas</span>
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">💳 Separas con el {cfg.porcentajeAnticipo}%</span>
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">🕒 Entrada {cfg.checkIn} · Salida {cfg.checkOut}</span>
@@ -183,7 +187,9 @@ export default async function Inicio() {
               </span>
             ))}
         </div>
+      </div>
       </section>
+      <Ola fondo="bg-crema" color="text-cafe-oscuro" abajo />
 
       {/* Calendario y formulario */}
       <section id="reservar" className="relative scroll-mt-20 fondo-puntos">
@@ -223,8 +229,10 @@ export default async function Inicio() {
 
       </ProveedorReserva>
 
-      {/* Reseñas */}
-      <section id="resenas" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-12 md:py-16">
+      {/* Reseñas, en franja arena */}
+      <Ola fondo="bg-crema" color="text-arena" />
+      <div className="bg-arena">
+      <section id="resenas" className="scroll-mt-20 mx-auto max-w-[1120px] px-4 md:px-6 py-10 md:py-14">
         <div className="text-center max-w-[640px] mx-auto">
           <Etiqueta tono="suave">⭐ Huéspedes felices</Etiqueta>
           <h2 className="font-titulo mt-3 text-[32px] md:text-[42px] leading-[0.95] font-extrabold">Lo que dicen de nosotros</h2>
@@ -303,9 +311,11 @@ export default async function Inicio() {
           </div>
         )}
       </section>
+      </div>
+      <Ola fondo="bg-crema" color="text-arena" abajo />
 
       {/* Antes de venir */}
-      <section className="mx-auto max-w-[1120px] px-4 md:px-6">
+      <section className="mx-auto mt-10 max-w-[1120px] px-4 md:px-6">
         <div className="rounded-[28px] border-[3px] border-cafe/15 bg-white p-6 md:p-8 grid gap-6 md:grid-cols-[1.2fr_0.8fr] items-center">
           <div>
             <h2 className="font-titulo text-2xl font-extrabold">Antes de venir</h2>
