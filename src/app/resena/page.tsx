@@ -20,9 +20,9 @@ export default async function Resena() {
       </div>
       <Link
         href="/fotos"
-        className="boton-goma mt-8 flex items-center justify-center gap-2 rounded-full border-[3px] border-teja bg-white px-5 py-3 font-extrabold text-teja"
+        className="boton-goma boton-flash mt-8 flex items-center justify-center gap-2 rounded-full border-[3px] border-teja bg-white px-5 py-3 font-extrabold text-teja"
       >
-        📸 ¿Tomaste buenas fotos? Compártelas aquí
+        <span className="camara" aria-hidden>📸</span> ¿Tomaste buenas fotos? Compártelas aquí
       </Link>
       {(cfg.redes.facebook || cfg.redes.instagram || cfg.redes.tiktok) && (
         <div className="mt-10 text-center font-extrabold">

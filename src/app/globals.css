@@ -315,3 +315,22 @@ body {
   55% { transform: translateY(-3px) rotate(1deg); }
   80% { transform: translateY(-1px) rotate(-0.3deg); }
 }
+
+/* «Comparte tus fotos»: cada 5 s la cámara hace clic y sale un flash blanco que ilumina el botón. */
+.boton-flash { position: relative; overflow: hidden; }
+.boton-flash .camara { display: inline-block; }
+@media (prefers-reduced-motion: no-preference) {
+  .boton-flash .camara { animation: clic-camara 5s 1.5s ease-in-out infinite; }
+  .boton-flash::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(circle at 18% 50%, #fff 0%, rgb(255 255 255 / 0.9) 20%, rgb(255 236 179 / 0.5) 45%, transparent 70%);
+    opacity: 0; animation: flash 5s 1.5s ease-out infinite;
+  }
+}
+@keyframes clic-camara {
+  0%, 12%, 100% { transform: scale(1) rotate(0); }
+  3% { transform: scale(0.8) rotate(-8deg); }
+  6% { transform: scale(1.25) rotate(6deg); }
+  9% { transform: scale(1) rotate(0); }
+}
+@keyframes flash { 0%, 3%, 100% { opacity: 0; } 5% { opacity: 1; } 14% { opacity: 0; } }

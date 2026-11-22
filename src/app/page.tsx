@@ -333,8 +333,8 @@ export default async function Inicio() {
             </ul>
           )}
           <p className="mt-6 text-center">
-            <a href="/fotos" className="boton-goma inline-block rounded-full bg-white border-[3px] border-teja px-5 py-2.5 font-extrabold text-teja">
-              📸 {fotos.length > 0 ? "Comparte tus fotos" : "¿Ya nos visitaste? Comparte tus fotos"}
+            <a href="/fotos" className="boton-goma boton-flash inline-block rounded-full bg-white border-[3px] border-teja px-5 py-2.5 font-extrabold text-teja">
+              <span className="camara" aria-hidden>📸</span> {fotos.length > 0 ? "Comparte tus fotos" : "¿Ya nos visitaste? Comparte tus fotos"}
             </a>
           </p>
         </div>
