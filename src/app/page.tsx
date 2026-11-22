@@ -11,6 +11,7 @@ import { fotosPublicas } from "@/lib/fotos";
 import { listarFotosCabana } from "@/lib/fotosCabana";
 import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { Ola } from "@/components/Ola";
+import { enlacesDelMapa } from "@/lib/mapa";
 import { AparecerAlBajar } from "@/components/AparecerAlBajar";
 import { IconoVivo } from "@/components/IconoVivo";
 import { IconosEnMovimiento } from "@/components/IconosEnMovimiento";
@@ -44,6 +45,8 @@ export default async function Inicio() {
     listarFotosCabana().catch(() => []),
   ]);
 
+
+  const mapa = enlacesDelMapa(cfg.mapsUrl, `${cfg.nombre}, ${cfg.municipio}, ${cfg.departamento}`);
 
   // Palabras del título por separado, para animarlas una por una.
   const titulo = cfg.heroTitulo.split(" ").filter(Boolean);
@@ -350,7 +353,7 @@ export default async function Inicio() {
 
       {/* Antes de venir */}
       <section className="mx-auto mt-10 max-w-[1120px] px-4 md:px-6">
-        <div className="rounded-[28px] border-[3px] border-cafe/15 bg-white p-6 md:p-8 grid gap-6 md:grid-cols-[1.2fr_0.8fr] items-center">
+        <div className="rounded-[28px] border-[3px] border-cafe/15 bg-white p-6 md:p-8 grid gap-6 md:grid-cols-[1.1fr_0.9fr] items-start">
           <div>
             <h2 className="font-titulo text-2xl font-extrabold">Antes de venir</h2>
             <ul className="mt-3 space-y-2">
@@ -361,18 +364,37 @@ export default async function Inicio() {
               ))}
             </ul>
           </div>
-          <a
-            href={cfg.mapsUrl}
-            target="_blank"
-            rel="noopener"
-            className="destello relative overflow-hidden flex items-center gap-3 rounded-[20px] bg-cafe text-white p-5 shadow-[0_6px_0_var(--cafe-oscuro)] hover:translate-y-px"
-          >
-            <span className="pin-salta text-3xl" aria-hidden>📍</span>
-            <span>
-              <span className="block font-titulo font-extrabold text-lg">Cómo llegar</span>
-              <span className="block text-sm font-semibold text-white/85">{cfg.comoLlegar}</span>
-            </span>
-          </a>
+          <div className="space-y-3">
+            {/* Tocar la tarjeta abre Google Maps con la ruta desde donde esté la persona. */}
+            <a
+              href={mapa.ruta}
+              target="_blank"
+              rel="noopener"
+              className="destello relative overflow-hidden flex items-center gap-3 rounded-[20px] bg-cafe text-white p-5 shadow-[0_6px_0_var(--cafe-oscuro)] hover:translate-y-px"
+            >
+              <span className="pin-salta text-3xl" aria-hidden>📍</span>
+              <span>
+                <span className="block font-titulo font-extrabold text-lg">Cómo llegar</span>
+                <span className="block text-sm font-semibold text-white/85">{cfg.comoLlegar}</span>
+              </span>
+            </a>
+            {/* Mini mapa: se carga solo cuando la persona baja hasta aquí. */}
+            <iframe
+              src={mapa.incrustado}
+              title={`Mapa: ubicación de ${cfg.nombre}`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="block h-52 w-full rounded-[20px] border-[3px] border-cafe/15"
+            />
+            <div className="grid grid-cols-2 gap-2 text-sm font-extrabold">
+              <a href={mapa.ruta} target="_blank" rel="noopener" className="rounded-full border-2 border-black/10 bg-crema px-3 py-2.5 text-center hover:border-cafe/40">
+                🗺️ Ruta en Google Maps
+              </a>
+              <a href={mapa.waze} target="_blank" rel="noopener" className="rounded-full border-2 border-black/10 bg-crema px-3 py-2.5 text-center hover:border-cafe/40">
+                🚗 Abrir en Waze
+              </a>
+            </div>
+          </div>
         </div>
       </section>
       <IconosEnMovimiento />

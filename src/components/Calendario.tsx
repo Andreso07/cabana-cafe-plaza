@@ -60,6 +60,28 @@ function diasDelMes(anio: number, mes: number): (Fecha | null)[] {
   ];
 }
 
+/**
+ * Fines de semana libres de un mes: los que aún no pasan y tienen libres las noches del viernes y del
+ * sábado. Son datos reales de la disponibilidad, para avisar con la verdad que quedan pocos.
+ */
+function finesLibres(anio: number, mes: number, hoy: Fecha, ultimoDia: Fecha, noDisponible: (f: Fecha) => boolean) {
+  let total = 0;
+  let libres = 0;
+  for (const f of diasDelMes(anio, mes)) {
+    if (!f || aDate(f).getUTCDay() !== 5 || f < hoy || f > ultimoDia) continue;
+    total++;
+    if (!noDisponible(f) && !noDisponible(sumarDias(f, 1))) libres++;
+  }
+  return { total, libres };
+}
+
+function avisoFines(mes: string, { total, libres }: { total: number; libres: number }): string | null {
+  if (total === 0) return null;
+  if (libres === 0) return `📅 ${mes}: los fines de semana ya están reservados. ¡Mira entre semana! 🌿`;
+  if (libres === 1) return `🔥 ${mes}: ¡queda 1 solo fin de semana libre!`;
+  if (libres === 2) return `🔥 ${mes}: ¡quedan solo 2 fines de semana libres!`;
+  return `📅 ${mes}: quedan ${libres} fines de semana libres`;
+}
 
 export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foco, onCambio }: Props) {
   const [desplazamiento, setDesplazamiento] = useState(0);
@@ -121,8 +143,30 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
     onCambio(entrada, f);
   }
 
+  // Aviso de fines de semana libres de los meses a la vista (en el celular solo se ve el primero).
+  const avisos = entrada
+    ? []
+    : meses.map(({ anio, mes }) => avisoFines(MESES[mes], finesLibres(anio, mes, hoy, ultimoDia, noDisponible)));
+
   return (
     <div>
+      {avisos.some(Boolean) && (
+        <div className="mb-3 flex flex-wrap justify-center gap-2">
+          {avisos.map(
+            (texto, i) =>
+              texto && (
+                <p
+                  key={i}
+                  className={`aviso-fines rounded-full px-3 py-1.5 text-xs font-extrabold ${
+                    texto.startsWith("🔥") ? "bg-teja/10 text-teja-oscura" : "bg-cafe/10 text-cafe"
+                  } ${i === 1 ? "hidden md:block" : ""}`}
+                >
+                  {texto}
+                </p>
+              ),
+          )}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"

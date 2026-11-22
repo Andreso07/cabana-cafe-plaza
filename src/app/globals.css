@@ -334,3 +334,8 @@ body {
   9% { transform: scale(1) rotate(0); }
 }
 @keyframes flash { 0%, 3%, 100% { opacity: 0; } 5% { opacity: 1; } 14% { opacity: 0; } }
+
+/* Aviso «quedan pocos fines de semana»: el de urgencia (🔥) late suave cada 3 s. */
+@media (prefers-reduced-motion: no-preference) {
+  .aviso-fines.bg-teja\/10 { animation: latido 3s ease-in-out infinite; }
+}
