@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Ola } from "@/components/Ola";
 import { Baloo_2, Nunito } from "next/font/google";
 import { Clarity } from "@/components/Clarity";
+import { Navidad } from "@/components/Navidad";
 import { ContadorVisitas } from "@/components/ContadorVisitas";
 import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
@@ -32,7 +33,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${nunito.variable} ${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
+        {cfg.modoNavidad && <Navidad parte="franja" mensaje={cfg.mensajeNavidad} />}
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-crema/90 border-b border-cafe/10">
+          {cfg.modoNavidad && <Navidad parte="luces" />}
           <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-3 flex items-center justify-between gap-3">
             <Link href="/" className="flex items-center gap-2.5 min-w-0">
               <Image
@@ -65,6 +68,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         </header>
 
         <div className="flex-1">{children}</div>
+        {cfg.modoNavidad && <Navidad parte="nieve" />}
         <Clarity />
 
         <div className="mt-16">

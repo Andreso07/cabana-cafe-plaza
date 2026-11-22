@@ -227,3 +227,38 @@ body {
   85% { opacity: 1; }
   100% { opacity: 0; transform: translate3d(10px, 105vh, 0) rotate(calc(var(--giro) + 620deg)); }
 }
+
+/* ---------- Modo Navidad (v0.11) ---------- */
+.luces-navidad .bombillo {
+  position: absolute; top: 3px; width: 8px; height: 11px; margin-left: -4px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--color-bombillo);
+  box-shadow: 0 0 6px 1px var(--color-bombillo);
+}
+.luces-navidad .bombillo::before { /* el soquete */
+  content: ""; position: absolute; top: -3px; left: 2px; width: 4px; height: 4px; border-radius: 1px; background: #2b4a28;
+}
+.luces-navidad .bombillo { --color-bombillo: #e53935; }
+.luces-navidad .bombillo[data-color="1"] { --color-bombillo: #43a047; }
+.luces-navidad .bombillo[data-color="2"] { --color-bombillo: #fbc02d; }
+.luces-navidad .bombillo[data-color="3"] { --color-bombillo: #1e88e5; }
+.nieve .copo { position: absolute; top: -30px; color: #b9d3ee; text-shadow: 0 0 2px #fff; opacity: 0.85; display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Las luces se prenden y apagan por turnos. */
+  .luces-navidad .bombillo { animation: titilar 1.6s ease-in-out infinite; animation-delay: calc(var(--n) * 0.4s); }
+  /* La nieve solo cae con movimiento: quieta no aporta y tapa texto. */
+  .nieve .copo { display: block; animation-name: nevar; animation-timing-function: linear; animation-iteration-count: infinite; }
+  .franja-navidad::after {
+    content: ""; position: absolute; inset: 0 auto 0 -40%; width: 30%; pointer-events: none;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.25), transparent);
+    animation: brillo-franja 5s 1s ease-in-out infinite;
+  }
+}
+@keyframes titilar { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; box-shadow: none; } }
+@keyframes nevar {
+  0% { transform: translate3d(0, 0, 0) rotate(0); }
+  50% { transform: translate3d(20px, 55vh, 0) rotate(180deg); }
+  100% { transform: translate3d(-10px, 110vh, 0) rotate(360deg); }
+}
+@keyframes brillo-franja { 0% { left: -40%; } 40%, 100% { left: 120%; } }

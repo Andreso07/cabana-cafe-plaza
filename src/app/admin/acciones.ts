@@ -135,6 +135,17 @@ export async function desbloquear(form: FormData) {
 
 // ---------- Configuración ----------
 
+/** Prende o apaga el modo Navidad de la web y guarda el mensaje de la franja. */
+export async function guardarNavidad(form: FormData) {
+  await guardar("navidad", async () => {
+    const mensaje = texto(form, "mensajeNavidad", 120);
+    return {
+      modoNavidad: form.get("modoNavidad") === "si",
+      ...(mensaje ? { mensajeNavidad: mensaje } : {}),
+    };
+  });
+}
+
 export async function guardarTextos(form: FormData) {
   await guardar("textos", async () => {
     const nombre = texto(form, "nombre", 80);

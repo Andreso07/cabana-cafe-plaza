@@ -117,6 +117,10 @@ export type Config = {
   // para ver las reservas de la web. Ninguna de las dos se muestra fuera del panel.
   googleIcalUrl: string;
   calendarioToken: string;
+
+  // Modo Navidad: nieve, luces bajo la barra y una franja con un mensaje. Se prende y apaga en el panel.
+  modoNavidad: boolean;
+  mensajeNavidad: string;
 };
 
 export const CONFIG_INICIAL: Config = {
@@ -212,4 +216,6 @@ export const CONFIG_INICIAL: Config = {
   ],
   googleIcalUrl: "",
   calendarioToken: "",
+  modoNavidad: false,
+  mensajeNavidad: "🎄 ¡Feliz Navidad! Celebra el fin de año entre cafetales y montañas",
 };

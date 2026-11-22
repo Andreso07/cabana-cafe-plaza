@@ -17,6 +17,7 @@ import {
   alternarDescuento,
   guardarCalendario,
   guardarListas,
+  guardarNavidad,
   guardarPlanes,
   guardarPrecios,
   guardarTextos,
@@ -42,6 +43,7 @@ const NOMBRES: Record<string, string> = {
   fechas: "Fechas especiales",
   descuentos: "Descuentos",
   codigos: "Códigos de colaboradores",
+  navidad: "Modo Navidad",
 };
 
 function Tarjeta({ id, titulo, ayuda, children }: { id: string; titulo: string; ayuda?: string; children: React.ReactNode }) {
@@ -102,6 +104,21 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
       {error && (
         <p className="rounded-[16px] bg-teja/10 text-teja-oscura font-extrabold px-4 py-3" role="alert">⚠️ {error}</p>
       )}
+
+      <Tarjeta
+        id="navidad"
+        titulo="🎄 Modo Navidad"
+        ayuda="Pone la web en modo Navidad: nieve que cae, luces de colores bajo la barra de arriba y una franja con tu mensaje. Apágalo cuando pase la temporada."
+      >
+        <form action={guardarNavidad} className="grid gap-4 md:grid-cols-[auto_1fr_auto] items-end">
+          <label className="flex items-center gap-2 rounded-full border-2 border-black/10 bg-white px-4 py-2 text-sm font-extrabold has-[:checked]:border-cafe has-[:checked]:bg-cafe/10">
+            <input type="checkbox" name="modoNavidad" value="si" defaultChecked={cfg.modoNavidad} className="size-4 accent-[var(--cafe)]" />
+            Encender modo Navidad
+          </label>
+          <Campo nombre="mensajeNavidad" titulo="Mensaje de la franja" valor={cfg.mensajeNavidad} maxLength={120} />
+          <div><button className={guardarBtn}>Guardar</button></div>
+        </form>
+      </Tarjeta>
 
       <Tarjeta id="precios" titulo="Precios y pago" ayuda="Precio por noche de la cabaña completa. El cobro al reservar usa estos valores según cuántas personas van.">
         <form action={guardarPrecios} className="grid gap-4 md:grid-cols-3">
