@@ -9,6 +9,7 @@ import { validarCodigo } from "@/lib/codigos";
 import { bloqueado, excedeLimite, ipDe, registrarIntento } from "@/lib/limite";
 import { CodigoNoValido, crearReserva, FechasNoDisponibles } from "@/lib/store";
 import { wompiConfigurado } from "@/lib/wompi";
+import { AVISO_LENGUAJE, lenguajeProhibido } from "@/lib/palabras";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -52,6 +53,9 @@ export async function POST(req: Request) {
   if (body.aceptaDatos !== true) errores.push("Debes autorizar el tratamiento de datos");
   if (body.aceptaTerminos !== true) errores.push("Debes aceptar las condiciones de reserva");
   if (errores.length) return NextResponse.json({ error: errores.join(". ") }, { status: 400 });
+  if (lenguajeProhibido([nombre], cfg.palabrasProhibidas)) {
+    return NextResponse.json({ error: AVISO_LENGUAJE }, { status: 400 });
+  }
 
   // Cada reserva sin pagar aparta noches durante horas: sin límite, alguien podría llenar el
   // calendario de reservas falsas. Seis por hora desde una misma conexión alcanza para un cliente

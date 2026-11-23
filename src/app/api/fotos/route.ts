@@ -3,6 +3,8 @@
 import { NextResponse } from "next/server";
 import { crearFoto, DemasiadasPendientes, MAX_BYTES_FOTO, MAX_BYTES_MINI, MAX_LADO, medidasJpeg } from "@/lib/fotos";
 import { excedeLimite, ipDe } from "@/lib/limite";
+import { leerConfig } from "@/lib/config";
+import { AVISO_LENGUAJE, lenguajeProhibido } from "@/lib/palabras";
 
 const texto = (v: FormDataEntryValue | null, max: number) =>
   typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : "";
@@ -28,6 +30,10 @@ export async function POST(req: Request) {
   const comentario = texto(form.get("comentario"), 200) || null;
   const errores: string[] = [];
   if (nombre.length < 2) errores.push("Escribe tu nombre");
+  // Va primero y solo: con el formulario de fotos, este aviso detiene el envío de todas las fotos.
+  if (lenguajeProhibido([nombre, comentario], (await leerConfig()).palabrasProhibidas)) {
+    return NextResponse.json({ error: AVISO_LENGUAJE }, { status: 400 });
+  }
   if (form.get("acepta") !== "si") errores.push("Debes autorizar que publiquemos tus fotos");
 
   const imagen = await bytesDe(form.get("imagen"), MAX_BYTES_FOTO);

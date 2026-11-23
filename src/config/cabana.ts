@@ -126,6 +126,10 @@ export type Config = {
   modoNavidad: boolean;
   mensajeNavidad: string;
   mensajeHalloween: string;
+
+  // Palabras o frases que el dueño agrega al filtro de lenguaje (además de la lista base de
+  // src/lib/palabras.ts). Se rechazan en reseñas, fotos y reservas.
+  palabrasProhibidas: string[];
 };
 
 export const CONFIG_INICIAL: Config = {
@@ -225,4 +229,5 @@ export const CONFIG_INICIAL: Config = {
   modoNavidad: false,
   mensajeNavidad: "🎄 ¡Feliz Navidad! Celebra el fin de año entre cafetales y montañas",
   mensajeHalloween: "🎃 ¡Feliz Halloween! Una noche de miedo (y de descanso) entre cafetales",
+  palabrasProhibidas: [],
 };

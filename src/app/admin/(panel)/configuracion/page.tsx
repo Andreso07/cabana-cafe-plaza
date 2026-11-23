@@ -10,6 +10,7 @@ import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
 import { describirMeses, NOMBRES_MES } from "@/config/cabana";
 import { listarCodigos } from "@/lib/codigos";
+import { FRASES_BASE, PALABRAS_BASE } from "@/lib/palabras";
 import {
   agregarCodigo,
   agregarDescuento,
@@ -17,6 +18,7 @@ import {
   alternarDescuento,
   guardarCalendario,
   guardarListas,
+  guardarPalabras,
   guardarTemporada,
   guardarPlanes,
   guardarPrecios,
@@ -44,6 +46,7 @@ const NOMBRES: Record<string, string> = {
   descuentos: "Descuentos",
   codigos: "Códigos de colaboradores",
   temporada: "Temporada",
+  palabras: "Palabras no permitidas",
 };
 
 function Tarjeta({ id, titulo, ayuda, children }: { id: string; titulo: string; ayuda?: string; children: React.ReactNode }) {
@@ -567,6 +570,29 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
             <textarea name="cancelacion" rows={5} className={campo} defaultValue={cfg.cancelacion.join("\n")} />
           </label>
           <div className="md:col-span-2"><button className={guardarBtn}>Guardar servicios y reglas</button></div>
+        </form>
+      </Tarjeta>
+
+      <Tarjeta
+        id="palabras"
+        titulo="🚫 Palabras no permitidas"
+        ayuda="Las reseñas, los comentarios de fotos y los nombres de las reservas que tengan estas palabras o amenazas no se envían: el visitante ve un aviso para cambiarlas. Ya hay una lista base de groserías y amenazas; aquí agregas las tuyas."
+      >
+        <form action={guardarPalabras} className="grid gap-3">
+          <label className={etiqueta}>
+            Tus palabras o frases <span className="font-semibold text-suave">(una por línea; termina en * para toda la familia: «grosero*»)</span>
+            <textarea name="palabras" rows={5} className={campo} defaultValue={cfg.palabrasProhibidas.join("\n")} placeholder={"estafa\nladrones*\nno vayan"} />
+          </label>
+          <p className="text-xs font-semibold text-suave">
+            No importan mayúsculas, tildes ni trucos como «p.u.t.a», «put4» o «puuuta». Se compara por palabra completa,
+            así que una raíz como «puta» no bloquea «computadora».
+          </p>
+          <details className="text-xs font-semibold text-suave">
+            <summary className="cursor-pointer font-extrabold">Ver la lista base ({PALABRAS_BASE.length} palabras y {FRASES_BASE.length} frases de amenaza)</summary>
+            <p className="mt-2 leading-relaxed">{PALABRAS_BASE.join(", ")}</p>
+            <p className="mt-2 leading-relaxed">{FRASES_BASE.join(" · ")}</p>
+          </details>
+          <div><button className={guardarBtn}>Guardar palabras</button></div>
         </form>
       </Tarjeta>
     </main>

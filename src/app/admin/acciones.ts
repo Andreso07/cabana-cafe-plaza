@@ -135,6 +135,17 @@ export async function desbloquear(form: FormData) {
 
 // ---------- Configuración ----------
 
+/** Palabras o frases extra del filtro de lenguaje (una por línea, hasta 200). */
+export async function guardarPalabras(form: FormData) {
+  await guardar("palabras", async () => {
+    const lista = texto(form, "palabras", 8000)
+      .split(/\r?\n|,/)
+      .map((l) => l.trim().toLowerCase().slice(0, 60))
+      .filter((l) => l.length >= 2);
+    return { palabrasProhibidas: [...new Set(lista)].slice(0, 200) };
+  });
+}
+
 /** Elige la temporada de la web (ninguna, Navidad, Halloween) y guarda el mensaje de cada franja. */
 export async function guardarTemporada(form: FormData) {
   await guardar("temporada", async () => {

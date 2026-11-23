@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { excedeLimite, ipDe } from "@/lib/limite";
 import { crearResena } from "@/lib/resenas";
+import { leerConfig } from "@/lib/config";
+import { AVISO_LENGUAJE, lenguajeProhibido } from "@/lib/palabras";
 
 const texto = (v: unknown, max: number) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : "");
 
@@ -22,6 +24,9 @@ export async function POST(req: Request) {
   if (comentario.length < 5) errores.push("Cuéntanos un poco más en el comentario");
   if (body.acepta !== true) errores.push("Debes autorizar que publiquemos tu reseña");
   if (errores.length) return NextResponse.json({ error: errores.join(". ") }, { status: 400 });
+  if (lenguajeProhibido([nombre, comentario], (await leerConfig()).palabrasProhibidas)) {
+    return NextResponse.json({ error: AVISO_LENGUAJE }, { status: 400 });
+  }
 
   // Solo cuentan las reseñas válidas: equivocarse al llenar no gasta el cupo. Diez por hora y
   // no tres, porque en la cabaña todos los huéspedes salen a internet por el mismo wifi (misma IP).
