@@ -12,23 +12,62 @@
  * El dueño agrega más en el panel (Configuración → Palabras no permitidas).
  */
 
-/** Insultos y groserías (uso colombiano incluido). «chimba» no está: «qué chimba» es un elogio. */
+/**
+ * Diccionario base, por categorías. Cada palabra se probó contra frases normales de reseñas para no
+ * bloquear lo que no es ofensivo. Por eso NO están, a propósito:
+ *  - «chimba» («qué chimba» es un elogio), «mamar» («mamar gallo»), «coger», «paja» (sombreros de
+ *    paja), «pajero» (la camioneta), «polla», «cuca» (también es un nombre), «mariquita» (el insecto),
+ *    «arepera» (quien vende arepas), «puñal», «sapo», «rata(s)» y «basura» (pueden ser quejas reales),
+ *    «retrasado» (vuelo retrasado), «dick» (también es un nombre), «negro», «indio», «gordo», «loco», «burro», «animal»;
+ *  - raíces que tocan palabras sanas: «puto*» tocaría «Putumayo», «foll*» tocaría «folleto».
+ * Lo que falte para este negocio se agrega en el panel.
+ */
 export const PALABRAS_BASE = [
-  "puta*", "puto", "putos", "putas", "putica*", "hijueput*", "hijuepuerca", "hpta", "hp", "hdp", "hdpta", "jueputa",
-  "gonorre*", "malparid*", "careverga", "careculo", "carechimba", "verga", "vergas", "mierda*", "pirob*",
-  "marica", "maricas", "maricon*", "maric*n", "perra", "perras", "zorra", "zorras", "cabron*", "pendej*",
-  "huevon*", "guevon*", "webon*", "idiota*", "imbecil*", "estupid*", "tarad*", "subnormal*", "culiad*",
-  "cagad*", "mamaguev*", "mamahuev*", "chupamelo", "chupala", "coño", "joder", "jodete", "fuck*",
-  "shit", "bitch*", "asshole*", "motherfuck*", "porno*", "xxx",
+  // Insultos fuertes (Colombia y Latinoamérica)
+  "hijueput*", "hijoeput*", "hijodeput*", "hijuepuerca", "jueputa*", "hpta", "hp", "hdp", "hdpta", "ptm",
+  "gonorre*", "malparid*", "malnacid*", "pirob*", "careverga*", "carenalga*", "careculo*", "carechimba*",
+  "caremonda*", "caremierda*", "mamaguev*", "mamahuev*", "huevon*", "guevon*", "webon*", "weon*",
+  "pendej*", "cabron*", "cretin*", "imbecil*", "idiota*", "estupid*", "tarad*", "subnormal*", "mongolic*",
+  "gilipoll*", "sinverguenza*", "lameculo*", "chupamedia*", "cachon", "cachones", "cornud*",
+  // Groserías y lenguaje sexual
+  "puta", "putas", "puto", "putos", "putica*", "putita*", "puteria*", "putear", "puteo", "puteado*",
+  "mierda*", "mierdero*", "verga", "vergas", "vergazo*", "monda", "mondas", "culo", "culos", "culon*",
+  "culiad*", "culear*", "culeando", "culiar*", "culicagad*", "cagad*", "cagon*", "cagar", "cago", "ojete*",
+  "orto", "panocha*", "tetas", "tetona*", "follar", "follando", "follame", "follada*", "chupame*",
+  "chupamelo", "chupamela", "chupala", "chupalo", "mamamela", "mamamelo", "mamala", "mamalo", "coño",
+  "joder", "jodete", "jodanse", "porno*", "xxx", "zorra", "zorras", "perra", "perras", "zunga*", "guaricha*",
+  // Discriminación (homofobia, racismo, xenofobia)
+  "marica", "maricas", "marika", "marikas", "maricon*", "maric*n", "cacorro*", "bujarron*", "joto", "jotos",
+  "travelo*", "sodomita*", "sudaca*", "veneco*", "negrata*",
+  // Inglés
+  "fuck*", "motherfuck*", "shit", "shitty", "bitch*", "asshole*", "bastard*", "cunt*",
+  "pussy", "whore*", "slut*", "nigg*", "fag", "fags", "faggot*", "retard*",
 ];
 
-/** Amenazas: se buscan como frase. */
+/**
+ * Amenazas y violencia: se buscan como frase. Solo frases que no tienen otro sentido: «la vista es una
+ * bomba», «voy a quemar calorías», «prenderle fuego a la fogata» o «te vas a morir de amor con la
+ * vista» o «que se mueran de envidia» son elogios y no deben bloquearse.
+ */
 export const FRASES_BASE = [
+  // Matar o hacer daño
   "te voy a matar", "los voy a matar", "las voy a matar", "lo voy a matar", "la voy a matar", "voy a matarte",
-  "te mato", "los mato", "las mato", "te vamos a matar", "los vamos a matar", "te voy a quemar",
-  "voy a quemar", "le voy a prender fuego", "les voy a prender fuego", "prenderle fuego", "vamos a quemar",
-  "una bomba", "poner una bomba", "secuestrar", "secuestro", "extorsion", "les va a pasar algo",
-  "te va a pasar algo", "se van a morir", "te vas a morir", "ya saben donde", "sabemos donde viven",
+  "voy a matarlos", "te vamos a matar", "los vamos a matar", "las vamos a matar", "los matamos", "te mato",
+  "los mato", "las mato", "te pego un tiro", "te meto un tiro", "un tiro en la cabeza", "les voy a meter plomo",
+  "te voy a meter plomo", "les vamos a meter plomo", "te voy a hacer daño", "les voy a hacer daño",
+  "les vamos a hacer daño", "te voy a desaparecer", "los vamos a desaparecer", "te voy a violar",
+  "las voy a violar", "te voy a romper la cara", "les voy a romper la cara", "te voy a partir la cara",
+  // Fuego y explosivos
+  "te voy a quemar", "le voy a quemar", "les voy a quemar", "voy a quemar la cabaña", "vamos a quemar la cabaña",
+  "le voy a prender fuego", "les voy a prender fuego", "le vamos a prender fuego", "les vamos a prender fuego",
+  "poner una bomba", "ponerles una bomba", "les pongo una bomba", "les ponemos una bomba", "volar la cabaña",
+  "volarles la casa", "dinamita", "explosivo", "explosivos", "atentado",
+  // Intimidación y extorsión
+  "les va a pasar algo", "te va a pasar algo", "sabemos donde viven", "se donde vives", "sabemos donde vives",
+  "se van a arrepentir", "te vas a arrepentir", "secuestro", "secuestrar", "secuestrarlos", "extorsion",
+  "extorsionar", "pagar la vacuna", "boleteo", "sicario", "sicarios",
+  // Deseos de muerte
+  "deberian morir", "deberian matarlos", "muerte a los",
 ];
 
 const LEET: Record<string, string> = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", $: "s", "!": "i", "|": "l", "€": "e" };
