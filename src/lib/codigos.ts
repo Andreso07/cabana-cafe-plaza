@@ -118,6 +118,11 @@ export async function alternarCodigo(codigo: string): Promise<void> {
   await db()`update codigos_descuento set activo = not activo where codigo = ${codigo}`;
 }
 
+/** Cambia la fecha de vencimiento (null = no vence). No toca reservas ni contadores. */
+export async function cambiarVence(codigo: string, vence: string | null): Promise<void> {
+  await db()`update codigos_descuento set vence = ${vence} where codigo = ${codigo}`;
+}
+
 /** Borra el código. Las reservas que lo usaron conservan el texto, así que siguen en las estadísticas. */
 export async function borrarCodigo(codigo: string): Promise<void> {
   await db()`delete from codigos_descuento where codigo = ${codigo}`;

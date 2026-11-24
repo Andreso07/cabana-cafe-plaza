@@ -28,6 +28,7 @@ import {
   guardarPrecios,
   guardarTextos,
   eliminarCodigo,
+  cambiarVencimientoCodigo,
   pausarCodigo,
   quitarDescuento,
   nuevoEnlaceCalendario,
@@ -544,6 +545,19 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
                     </BotonConfirmar>
                   </form>
                 </div>
+                {/* Cambiar el vencimiento sin borrar el código (conserva su historial y sus bonos impresos). */}
+                <form action={cambiarVencimientoCodigo} className="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold">
+                  <input type="hidden" name="codigo" value={c.codigo} />
+                  <label className="flex items-center gap-1.5">
+                    Vence el
+                    <input type="date" name="vence" defaultValue={c.vence ?? ""} min={hoy} className="rounded-[10px] border-2 border-black/[0.06] bg-crema px-2 py-1 font-semibold" />
+                  </label>
+                  <label className="flex items-center gap-1 text-suave">
+                    <input type="checkbox" name="sinVencimiento" value="si" defaultChecked={c.vence === null} className="accent-[var(--cafe)]" />
+                    sin vencimiento
+                  </label>
+                  <button className="rounded-full border-2 border-black/10 px-3 py-1 font-extrabold hover:border-cafe/40">Cambiar vencimiento</button>
+                </form>
               </li>
             );
           })}

@@ -14,7 +14,7 @@ import { esSugerencia, type Sugerencia } from "@/lib/sugerencias";
 import { borrarResena, cambiarEstadoResena, type EstadoResena } from "@/lib/resenas";
 import { borrarFoto, cambiarEstadoFoto, type EstadoFoto } from "@/lib/fotos";
 import { borrarFotoCabana, describirFotoCabana, moverFotoCabana } from "@/lib/fotosCabana";
-import { alternarCodigo, borrarCodigo, CodigoYaExiste, crearCodigo, normalizarCodigo } from "@/lib/codigos";
+import { alternarCodigo, borrarCodigo, cambiarVence, CodigoYaExiste, crearCodigo, normalizarCodigo } from "@/lib/codigos";
 import { sincronizarDespues, sincronizarGoogle } from "@/lib/googleCalendar";
 import {
   cancelarReserva,
@@ -537,6 +537,17 @@ export async function agregarCodigo(form: FormData) {
 
 export async function pausarCodigo(form: FormData) {
   await cambiarCodigos(() => alternarCodigo(normalizarCodigo(texto(form, "codigo", 20))));
+}
+
+/** Extiende o cambia el vencimiento de un código sin borrarlo (conserva su historial de ventas). */
+export async function cambiarVencimientoCodigo(form: FormData) {
+  await cambiarCodigos(async () => {
+    const codigo = normalizarCodigo(texto(form, "codigo", 20));
+    const vence = form.get("sinVencimiento") === "si" ? null : texto(form, "vence", 10) || null;
+    if (form.get("sinVencimiento") !== "si" && !vence) throw new Invalido("Elige la nueva fecha de vencimiento");
+    if (vence && (!esFechaValida(vence) || vence < hoyEnColombia())) throw new Invalido("La fecha de vencimiento debe ser hoy o después");
+    await cambiarVence(codigo, vence);
+  });
 }
 
 export async function eliminarCodigo(form: FormData) {
