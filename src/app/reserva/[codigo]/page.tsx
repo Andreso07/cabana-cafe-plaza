@@ -7,6 +7,7 @@ import { pesos } from "@/lib/precios";
 import { obtenerReserva } from "@/lib/store";
 import { urlDePago, wompiConfigurado } from "@/lib/wompi";
 import { Confeti } from "@/components/Confeti";
+import { ganadorasDelRegalo } from "@/lib/regalos";
 import { Refrescar, ReportarPago, SimularPago } from "./acciones";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,15 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
         })
       : null;
 
+  // ¿Esta reserva es de las primeras de una promoción con regalo (p. ej. Black Friday)?
+  const promoRegalo = cfg.descuentos.find(
+    (d) => d.tipo === "compra" && (d.regalos ?? 0) > 0 && d.nombre === r.descuentoNombre,
+  );
+  const ganoRegalo =
+    r.estado === "confirmada" && promoRegalo?.tipo === "compra"
+      ? await ganadorasDelRegalo(promoRegalo).then((g) => g.includes(r.codigo)).catch(() => false)
+      : false;
+
   const fechas = `del ${formatoLargo(r.entrada)} al ${formatoLargo(r.salida)}`;
   const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
     `Hola, tengo la reserva ${r.codigo} en ${cfg.nombre}, ${fechas}, a nombre de ${r.nombre}.`,
@@ -57,6 +67,23 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
       {(r.estado === "pendiente" || r.estado === "confirmada") && <Confeti clave={`${r.codigo}:${r.estado}`} />}
       {r.estado === "pendiente" && (
         <p className="mt-1 font-extrabold text-cafe">¡Tus fechas quedaron apartadas! 🎉 Solo falta el anticipo para confirmarlas.</p>
+      )}
+      {ganoRegalo && promoRegalo?.tipo === "compra" && (
+        <div className="mt-4 rounded-[20px] bg-[#111] p-4 text-white">
+          <p className="font-titulo text-xl font-extrabold">🎁 ¡Ganaste {promoRegalo.regaloTexto || "una noche de regalo"}!</p>
+          <p className="mt-1 text-sm font-semibold text-white/85">
+            Tu reserva es de las primeras {promoRegalo.regalos} pagadas del {promoRegalo.nombre}. Escríbenos por WhatsApp
+            para agendarla.
+          </p>
+          <a
+            href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(`Hola, gané el regalo del ${promoRegalo.nombre} con la reserva ${r.codigo}. Quiero agendar mi noche.`)}`}
+            target="_blank"
+            rel="noopener"
+            className="boton-whatsapp mt-3 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-sm font-extrabold text-white"
+          >
+            💬 Agendar mi noche de regalo
+          </a>
+        </div>
       )}
       <p className="text-suave font-semibold mt-1">
         Código de reserva: <strong className="text-tinta">{r.codigo}</strong>

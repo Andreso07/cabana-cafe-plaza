@@ -7,7 +7,7 @@ import { FormularioResena } from "@/components/FormularioResena";
 import { Redes } from "@/components/Redes";
 import { Reservar } from "@/components/Reservar";
 import { leerConfig } from "@/lib/config";
-import { pesos } from "@/lib/precios";
+import { pesos, promoAbierta } from "@/lib/precios";
 import { fotosPublicas } from "@/lib/fotos";
 import { listarFotosCabana } from "@/lib/fotosCabana";
 import { GaleriaCabana } from "@/components/GaleriaCabana";
@@ -223,13 +223,20 @@ export default async function Inicio() {
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">👥 Hasta {cfg.capacidad} personas</span>
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">💳 Separas con el {cfg.porcentajeAnticipo}%</span>
           <span className="bg-white rounded-full px-3 py-1 border border-sol/40">🕒 Entrada {cfg.checkIn} · Salida {cfg.checkOut}</span>
+          {/* Una promoción por fecha de compra solo se anuncia mientras está abierta, y en negro. */}
           {cfg.descuentos
-            .filter((d) => d.activo)
-            .map((d) => (
-              <span key={d.id} className="bg-white rounded-full px-3 py-1 border border-cafe/30 text-cafe">
-                🎁 {d.nombre}: −{d.porcentaje}%
-              </span>
-            ))}
+            .filter((d) => d.activo && (d.tipo !== "compra" || promoAbierta(d)))
+            .map((d) =>
+              d.tipo === "compra" ? (
+                <span key={d.id} className="insignia-salta rounded-full bg-[#111] px-3 py-1 text-white">
+                  🖤 {d.nombre}: <span className="text-sol">−{d.porcentaje}%</span> reservando hoy
+                </span>
+              ) : (
+                <span key={d.id} className="bg-white rounded-full px-3 py-1 border border-cafe/30 text-cafe">
+                  🎁 {d.nombre}: −{d.porcentaje}%
+                </span>
+              ),
+            )}
         </div>
       </div>
       </section>

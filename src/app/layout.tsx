@@ -5,6 +5,9 @@ import { Ola } from "@/components/Ola";
 import { Baloo_2, Nunito } from "next/font/google";
 import { Clarity } from "@/components/Clarity";
 import { Temporada } from "@/components/Temporada";
+import { FranjaPromo } from "@/components/FranjaPromo";
+import { promoVigente } from "@/lib/precios";
+import { ganadorasDelRegalo } from "@/lib/regalos";
 import { ContadorVisitas } from "@/components/ContadorVisitas";
 import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
@@ -40,10 +43,20 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     `Hola, quiero información sobre ${cfg.nombre}`,
   )}`;
   const temporada = cfg.temporada === "ninguna" ? null : cfg.temporada;
+  // Promoción por fecha de compra abierta hoy (Black Friday): franja negra con cuenta regresiva.
+  const promo = promoVigente(cfg.descuentos);
+  // Cupos de regalo que quedan (si la base falla, la franja sale sin el contador, nunca con uno inventado).
+  const regalo =
+    promo && (promo.regalos ?? 0) > 0
+      ? await ganadorasDelRegalo(promo)
+          .then((g) => ({ texto: promo.regaloTexto || "una noche de regalo", total: promo.regalos ?? 0, quedan: Math.max(0, (promo.regalos ?? 0) - g.length) }))
+          .catch(() => null)
+      : null;
   const telefono = cfg.whatsapp.replace(/^57/, "").replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
   return (
     <html lang="es" className={`${nunito.variable} ${baloo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
+        {promo && <FranjaPromo nombre={promo.nombre} porcentaje={promo.porcentaje} hasta={promo.compraHasta} regalo={regalo} />}
         {temporada && <Temporada tema={temporada} parte="franja" mensaje={temporada === "navidad" ? cfg.mensajeNavidad : cfg.mensajeHalloween} />}
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-crema/90 border-b border-cafe/10">
           {temporada && <Temporada tema={temporada} parte="luces" />}

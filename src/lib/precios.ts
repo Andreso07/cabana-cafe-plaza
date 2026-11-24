@@ -2,7 +2,7 @@
 // (para cobrar) con la misma configuración: el servidor nunca confía en el
 // total que manda el navegador.
 import type { Config, Descuento } from "@/config/cabana";
-import { diaSemana, noches, sumarDias, type Fecha } from "./fechas";
+import { diaSemana, hoyEnColombia, noches, sumarDias, type Fecha } from "./fechas";
 import { esFestivo } from "./festivos";
 
 /** Lo que el cálculo necesita de la configuración (es lo que viaja al navegador). */
@@ -77,7 +77,18 @@ export type Cotizacion = {
   minNoches: number;
 };
 
-function aplica(d: Descuento, entrada: Fecha, lista: { tipo: TipoNoche }[]): boolean {
+/** ¿La promoción por fecha de compra está abierta hoy (hora Colombia)? */
+export function promoAbierta(d: Descuento, hoy: Fecha = hoyEnColombia()): boolean {
+  return d.tipo === "compra" && d.activo && d.porcentaje > 0 && hoy >= d.compraDesde && hoy <= d.compraHasta;
+}
+
+/** La promoción por fecha de compra abierta hoy (la de mayor porcentaje), para la franja y las etiquetas. */
+export function promoVigente(descuentos: Descuento[], hoy: Fecha = hoyEnColombia()) {
+  const abiertas = descuentos.filter((d) => promoAbierta(d, hoy)) as Extract<Descuento, { tipo: "compra" }>[];
+  return abiertas.sort((a, b) => b.porcentaje - a.porcentaje)[0] ?? null;
+}
+
+function aplica(d: Descuento, entrada: Fecha, lista: { fecha: Fecha; tipo: TipoNoche }[]): boolean {
   if (!d.activo || d.porcentaje <= 0) return false;
   if (d.tipo === "noches") return lista.length >= d.minNoches;
   // Entre semana: TODAS las noches tienen precio de semana (martes a jueves; no viernes, fin de
@@ -88,6 +99,16 @@ function aplica(d: Descuento, entrada: Fecha, lista: { tipo: TipoNoche }[]): boo
   if (d.tipo === "meses") {
     const mes = Number(entrada.slice(5, 7));
     return lista.length >= d.minNoches && (d.meses.length === 0 || d.meses.includes(mes));
+  }
+  // Por fecha de compra: se reserva dentro de la promoción, se llega en el periodo, y ninguna noche
+  // cae en las fechas excluidas. Lo decide el día de HOY, no el de la estadía.
+  if (d.tipo === "compra") {
+    if (!promoAbierta(d)) return false;
+    if (entrada < d.desde || entrada > d.hasta) return false;
+    const sinDesde = d.sinDesde;
+    const sinHasta = d.sinHasta;
+    if (sinDesde && sinHasta && lista.some((n) => n.fecha >= sinDesde && n.fecha <= sinHasta)) return false;
+    return true;
   }
   return entrada >= d.desde && entrada <= d.hasta;
 }

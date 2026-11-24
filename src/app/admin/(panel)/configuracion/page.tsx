@@ -7,7 +7,7 @@ import { SUGERENCIAS, sugerenciaDe } from "@/lib/sugerencias";
 import { googleConfigurado } from "@/lib/googleCalendar";
 import { leerConfig } from "@/lib/config";
 import { formatoLargo, hoyEnColombia } from "@/lib/fechas";
-import { pesos } from "@/lib/precios";
+import { pesos, promoAbierta } from "@/lib/precios";
 import { describirMeses, NOMBRES_MES } from "@/config/cabana";
 import { listarCodigos } from "@/lib/codigos";
 import { FRASES_BASE, PALABRAS_BASE } from "@/lib/palabras";
@@ -415,7 +415,9 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
                     ? `solo noches de martes a jueves, desde ${d.minNoches} ${d.minNoches === 1 ? "noche" : "noches"}`
                     : d.tipo === "meses"
                       ? `todos los planes, ${d.meses.length === 0 ? "todo el año" : `llegando en ${describirMeses(d.meses)}`}${d.minNoches > 1 ? `, desde ${d.minNoches} noches` : ""}`
-                      : `llegando entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}`}
+                      : d.tipo === "compra"
+                        ? `🖤 reservando del ${formatoLargo(d.compraDesde)} al ${formatoLargo(d.compraHasta)}, para llegar entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}${d.sinDesde && d.sinHasta ? ` (sin noches del ${formatoLargo(d.sinDesde)} al ${formatoLargo(d.sinHasta)})` : ""}${d.regalos ? ` · 🎁 las primeras ${d.regalos} pagadas se llevan ${d.regaloTexto}` : ""}${promoAbierta(d) ? " · ABIERTA AHORA" : d.compraHasta < hoy ? " · ya terminó" : " · todavía no empieza"}`
+                        : `llegando entre ${formatoLargo(d.desde)} y ${formatoLargo(d.hasta)}`}
               </span>
               <form action={alternarDescuento}>
                 <input type="hidden" name="id" value={d.id} />
@@ -438,10 +440,11 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
               <option value="fechas">Por fechas de llegada</option>
               <option value="entreSemana">Solo entre semana (martes a jueves)</option>
               <option value="meses">Todos los planes, por meses</option>
+              <option value="compra">🖤 Promoción por fecha de reserva (Black Friday)</option>
             </select>
           </label>
           <Campo nombre="minNoches" titulo="Desde cuántas noches" valor="" inputMode="numeric" placeholder="3" ayuda="Para «por número de noches», «entre semana» y «por meses». En «entre semana», todas las noches deben ser de martes, miércoles o jueves (no festivos). Vacío en «por meses»: desde 1 noche." />
-          <Campo nombre="desde" titulo="Llegando desde" valor="" type="date" ayuda="Solo para «por fechas»." />
+          <Campo nombre="desde" titulo="Llegando desde" valor="" type="date" ayuda="Para «por fechas» y para la promoción." />
           <Campo nombre="hasta" titulo="Llegando hasta" valor="" type="date" />
           <fieldset className="md:col-span-3">
             <legend className={etiqueta}>Meses <span className="font-semibold text-suave">(solo para «por meses»)</span></legend>
@@ -456,6 +459,22 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
             <p className="mt-1 text-xs font-semibold text-suave">
               Cuenta el mes del día de llegada, y el descuento vale para toda la estadía, en cualquier plan (fines de
               semana y festivos incluidos). Sin marcar ninguno: todo el año.
+            </p>
+          </fieldset>
+          <fieldset className="md:col-span-3 grid gap-3 md:grid-cols-4 rounded-[16px] border-2 border-dashed border-black/10 p-3">
+            <legend className={`${etiqueta} px-1`}>🖤 Solo para la promoción por fecha de reserva</legend>
+            <Campo nombre="compraDesde" titulo="Se puede reservar desde" valor="" type="date" />
+            <Campo nombre="compraHasta" titulo="Hasta (incluido)" valor="" type="date" />
+            <Campo nombre="sinDesde" titulo="Excepto noches del" valor="" type="date" ayuda="Opcional, ej.: 24 de dic." />
+            <Campo nombre="sinHasta" titulo="al" valor="" type="date" ayuda="Ej.: 31 de dic." />
+            <Campo nombre="regalos" titulo="Regalo para las primeras" valor="" inputMode="numeric" placeholder="3" ayuda="Reservas pagadas. Vacío: sin regalo." />
+            <div className="md:col-span-3">
+              <Campo nombre="regaloTexto" titulo="¿Qué se llevan?" valor="" maxLength={80} placeholder="una noche entre semana gratis en febrero o marzo" />
+            </div>
+            <p className="md:col-span-4 text-xs font-semibold text-suave">
+              Vale para quien reserve en esos días (hora Colombia) y llegue entre «Llegando desde» y «Llegando hasta». Si
+              alguna noche cae en las fechas excluidas, no aplica. Mientras está abierta sale una franja negra con cuenta
+              regresiva en la web, y se apaga sola al terminar.
             </p>
           </fieldset>
           <div className="md:col-span-3"><button className={guardarBtn}>Agregar descuento</button></div>

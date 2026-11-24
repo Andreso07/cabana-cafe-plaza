@@ -32,6 +32,21 @@ export type Descuento = {
   | { tipo: "entreSemana"; minNoches: number } // todas las noches son de martes a jueves
   // Llegadas en ciertos meses (1 = enero). Vacío = todo el año, o sea, cualquier plan y fecha.
   | { tipo: "meses"; meses: number[]; minNoches: number }
+  // Promoción por fecha de COMPRA (Black Friday, Cyber Monday): vale si se reserva entre compraDesde
+  // y compraHasta (hora Colombia), llegando entre desde y hasta, y sin ninguna noche entre sinDesde y
+  // sinHasta (fechas que se llenan solas, como el 24 al 31 de diciembre).
+  | {
+      tipo: "compra";
+      compraDesde: string;
+      compraHasta: string;
+      desde: string;
+      hasta: string;
+      sinDesde: string | null;
+      sinHasta: string | null;
+      // Regalo para las primeras N reservas PAGADAS con la promoción (0 o sin poner = sin regalo).
+      regalos?: number;
+      regaloTexto?: string;
+    }
 );
 
 export const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];

@@ -373,6 +373,31 @@ export async function agregarDescuento(form: FormData) {
       const min = texto(form, "minNoches", 5) ? numero(form, "minNoches", "Desde cuántas noches", 1, 60) : 1;
       // Los 12 marcados es lo mismo que ninguno: todo el año.
       d = { id: nuevoId(), nombre, porcentaje, activo: true, tipo, meses: meses.length === 12 ? [] : meses, minNoches: min };
+    } else if (tipo === "compra") {
+      // Black Friday y similares: cuándo se puede reservar, para qué llegadas y qué fechas quedan fuera.
+      const compraDesde = texto(form, "compraDesde", 10);
+      const compraHasta = texto(form, "compraHasta", 10) || compraDesde;
+      const desde = texto(form, "desde", 10);
+      const hasta = texto(form, "hasta", 10);
+      const sinDesde = texto(form, "sinDesde", 10) || null;
+      const sinHasta = texto(form, "sinHasta", 10) || sinDesde;
+      if (!esFechaValida(compraDesde) || !esFechaValida(compraHasta) || compraHasta < compraDesde) {
+        throw new Invalido("Promoción: revisa los días en que se puede reservar");
+      }
+      if (!esFechaValida(desde) || !esFechaValida(hasta) || hasta < desde) {
+        throw new Invalido("Promoción: revisa las fechas de llegada (desde y hasta)");
+      }
+      if (sinDesde && (!esFechaValida(sinDesde) || !sinHasta || !esFechaValida(sinHasta) || sinHasta < sinDesde)) {
+        throw new Invalido("Promoción: revisa las fechas que quedan por fuera");
+      }
+      // Regalo opcional para las primeras N reservas pagadas (p. ej. 3 → una noche entre semana).
+      const regalos = texto(form, "regalos", 3) ? numero(form, "regalos", "Reservas con regalo", 0, 50) : 0;
+      const regaloTexto = texto(form, "regaloTexto", 80);
+      if (regalos > 0 && !regaloTexto) throw new Invalido("Promoción: escribe cuál es el regalo, por ejemplo «una noche entre semana gratis»");
+      d = {
+        id: nuevoId(), nombre, porcentaje, activo: true, tipo, compraDesde, compraHasta, desde, hasta, sinDesde, sinHasta,
+        ...(regalos > 0 ? { regalos, regaloTexto } : {}),
+      };
     } else {
       const desde = texto(form, "desde", 10);
       const hasta = texto(form, "hasta", 10) || desde;

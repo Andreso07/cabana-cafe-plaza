@@ -6,6 +6,7 @@ import { esAdmin } from "@/lib/admin";
 import { leerConfig } from "@/lib/config";
 import { diasEntre, formatoLargo, hoyEnColombia, sumarDias } from "@/lib/fechas";
 import { pesos } from "@/lib/precios";
+import { ganadorasDeTodas } from "@/lib/regalos";
 import {
   buscarReservas,
   listarBloqueos,
@@ -148,6 +149,8 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
     reservasQueLlegan(hoy, sumarDias(hoy, DIAS_LLEGADAS - 1)),
     leerConfig(),
   ]);
+  // Reservas que ganaron el regalo de una promoción (las primeras N pagadas).
+  const ganadoras = await ganadorasDeTodas(cfg.descuentos).catch(() => new Map());
   const ocupacion = cifras.diasDelMes ? Math.round((cifras.nochesOcupadasMes / cifras.diasDelMes) * 100) : 0;
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
   const enlace = (cambios: Record<string, string | number>) => {
@@ -248,6 +251,11 @@ export default async function Panel({ searchParams }: PageProps<"/admin">) {
                       {r.descuento > 0 && <span className="block text-xs text-cafe">🎁 −{pesos(r.descuento)}</span>}
                       {r.codigoDescuento && (
                         <span className="block text-xs font-bold text-cafe">🤝 Código {r.codigoDescuento}</span>
+                      )}
+                      {ganadoras.has(r.codigo) && (
+                        <span className="mt-0.5 inline-block rounded-full bg-[#111] px-2 py-0.5 text-[11px] font-extrabold text-white">
+                          🎁 Ganó regalo {ganadoras.get(r.codigo)?.nombre}
+                        </span>
                       )}
                       {r.pago && <span className="block text-xs text-suave">{r.pago.proveedor}: {r.pago.id}</span>}
                       {porVerificar && r.pagoReportado && (
