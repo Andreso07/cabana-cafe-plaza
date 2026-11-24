@@ -1,11 +1,12 @@
-// Solo para probar en local sin llaves de Wompi. En producción no existe.
+// Solo para probar en local sin llaves de Wompi, y en la web de demostración. En producción no existe.
 import { NextResponse } from "next/server";
 import { confirmarPago, obtenerReserva } from "@/lib/store";
 import { sincronizarDespues } from "@/lib/googleCalendar";
 import { wompiConfigurado } from "@/lib/wompi";
+import { esDemo } from "@/lib/demo";
 
 export async function POST(_req: Request, ctx: { params: Promise<{ codigo: string }> }) {
-  if (wompiConfigurado() || process.env.NODE_ENV === "production") {
+  if (wompiConfigurado() || (process.env.NODE_ENV === "production" && !esDemo())) {
     return NextResponse.json({ error: "No disponible" }, { status: 404 });
   }
   const { codigo } = await ctx.params;

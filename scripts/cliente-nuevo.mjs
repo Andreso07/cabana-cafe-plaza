@@ -23,6 +23,34 @@ const departamento = opcion("departamento");
 const whatsapp = opcion("whatsapp").replace(/\D/g, "");
 const url = process.env.DATABASE_URL ?? "";
 
+// Web de DEMOSTRACIÓN: `node scripts/cliente-nuevo.mjs --demo` solo crea las tablas y deja la base
+// vacía; los datos de ejemplo los pone la propia web (con MODO_DEMO=1) al abrir /api/mantenimiento.
+if (process.argv.includes("--demo")) {
+  if (!url) {
+    console.error("Falta la variable DATABASE_URL (la del Supabase de la demostración).");
+    process.exit(1);
+  }
+  const sql = postgres(url, { max: 1, prepare: false, connect_timeout: 20, onnotice: () => {} });
+  try {
+    await sql.unsafe(readFileSync(new URL("../db/schema.sql", import.meta.url), "utf8"));
+    console.log("✓ Tablas creadas o ya existentes (db/schema.sql).");
+    const [cfg] = await sql`select datos->>'demo' as demo from configuracion where id = 1`;
+    if (cfg && cfg.demo !== "true") {
+      console.error("✗ Esta base tiene la configuración de una cabaña real. No sirve para la demostración.");
+      process.exitCode = 1;
+    } else {
+      console.log("✓ Lista para la demostración. Con la web publicada (MODO_DEMO=1), abre una vez");
+      console.log("  https://tu-demo.vercel.app/api/mantenimiento: ahí se cargan los datos de ejemplo.");
+    }
+  } catch (e) {
+    console.error("✗ Error:", e.message);
+    process.exitCode = 1;
+  } finally {
+    await sql.end();
+  }
+  process.exit();
+}
+
 const faltan = [
   !url && "la variable DATABASE_URL (la del Supabase del cliente)",
   !nombre && "--nombre",

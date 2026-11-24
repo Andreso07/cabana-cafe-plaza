@@ -8,6 +8,7 @@ import { obtenerReserva } from "@/lib/store";
 import { urlDePago, wompiConfigurado } from "@/lib/wompi";
 import { Confeti } from "@/components/Confeti";
 import { ganadorasDelRegalo } from "@/lib/regalos";
+import { esDemo } from "@/lib/demo";
 import { Refrescar, ReportarPago, SimularPago } from "./acciones";
 
 export const dynamic = "force-dynamic";
@@ -129,7 +130,7 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
               Pagar {pesos(r.anticipo)} con Nequi, PSE o tarjeta
             </a>
           )}
-          {!pago && process.env.NODE_ENV !== "production" && <SimularPago codigo={r.codigo} />}
+          {!pago && (process.env.NODE_ENV !== "production" || esDemo()) && <SimularPago codigo={r.codigo} />}
           {!pago && (
             <div className="rounded-[24px] border-[3px] border-teja bg-white p-5 text-sm font-semibold space-y-4 shadow-[0_8px_0_var(--teja)]">
               <p className="font-titulo text-lg font-extrabold">Separa con {pesos(r.anticipo)}</p>

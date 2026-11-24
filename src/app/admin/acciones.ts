@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { leerDiaMes } from "@/lib/temporada";
+import { esDemo, restablecerDemo } from "@/lib/demo";
 import { PALETAS } from "@/lib/paletas";
 import { cerrarSesion, cerrarTodasLasSesiones, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
@@ -86,8 +87,19 @@ export async function entrar(form: FormData) {
 }
 
 export async function salir() {
-  await cerrarTodasLasSesiones();
+  // En la demostración la clave es pública y la usan varios a la vez: «Salir» solo cierra este navegador.
+  if (esDemo()) await cerrarSesion();
+  else await cerrarTodasLasSesiones();
   redirect("/admin/entrar");
+}
+
+/** Demostración: vuelve todo a los datos de ejemplo ya mismo (lo mismo que pasa cada noche). */
+export async function restablecerDemostracion() {
+  await exigirAdmin();
+  const h = await headers();
+  await restablecerDemo(`${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`);
+  revalidatePath("/", "layout");
+  redirect(`${CONFIG}?ok=demo`);
 }
 
 export async function salirPorInactividad() {

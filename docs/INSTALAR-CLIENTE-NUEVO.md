@@ -148,6 +148,27 @@ Desde el celular, en una ventana de incógnito:
 - [ ] `/condiciones` y `/privacidad` dicen **su** nombre y su responsable.
 - [ ] Deja una reseña de prueba, apruébala en el panel y luego **bórrala**.
 
+## Anexo: la web de demostración
+
+Una copia para mostrarle el sistema a otras cabañas («Cabaña Demo», con las fotos de Café Plaza). Se
+monta igual que un cliente, con tres diferencias:
+
+1. Base: un proyecto de Supabase **solo para la demo**. En el paso 2 corre
+   `node scripts/cliente-nuevo.mjs --demo` (crea las tablas y no guarda configuración).
+2. Vercel: además de `DATABASE_URL`, `ADMIN_USUARIO` y `ADMIN_PASSWORD`, agrega `MODO_DEMO` = `1`.
+   El usuario y la clave **se muestran en la pantalla de entrar**: usa unos solo para la demo, nunca los
+   de tu panel real.
+3. Cuando termine el Deploy, abre una vez `https://tu-demo.vercel.app/api/mantenimiento`: ahí se cargan
+   los datos de ejemplo. Desde entonces se reinicia sola cada noche, y en Configuración hay un botón
+   «Restablecer demostración».
+
+Doble candado: el reinicio solo corre con `MODO_DEMO=1` **y** sobre una base vacía o marcada como
+demostración. Si por error alguien pone `MODO_DEMO=1` en la web de un cliente, el reinicio falla sin
+borrar nada (pero la franja de demo y la clave visible sí saldrían: no lo hagas).
+
+La demo no sale en Google (noindex y robots.txt), no lleva Clarity, el pago se simula y la franja de
+arriba lleva a tu WhatsApp.
+
 ## 8. Entrega
 
 - Dale al cliente su usuario y clave del panel en persona (o que él la cambie en Vercel).

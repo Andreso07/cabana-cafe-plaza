@@ -38,7 +38,9 @@ import {
   nuevoEnlaceCalendario,
   quitarFechaEspecial,
   sincronizarAhora,
+  restablecerDemostracion,
 } from "../../acciones";
+import { esDemo } from "@/lib/demo";
 
 const campo =
   "mt-1 w-full rounded-[12px] border-2 border-black/[0.06] bg-crema px-3 py-2 text-sm font-semibold outline-none focus:border-teja focus:bg-white";
@@ -110,9 +112,16 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
         </nav>
       </div>
 
+      {esDemo() && (
+        <form action={restablecerDemostracion} className="rounded-[20px] bg-[#1f3a5f] text-white p-5 flex flex-wrap items-center gap-3 justify-between">
+          <p className="text-sm font-bold max-w-xl">🧪 Estás en la <b>demostración</b>. Cambia lo que quieras: cada noche todo vuelve a los datos de ejemplo. Si quieres verlo ya como nuevo, restablécelo.</p>
+          <BotonConfirmar pregunta="¿Volver todo a los datos de ejemplo? Se borra lo que hayan hecho los visitantes." textoConfirmar="Sí, restablecer" className="rounded-full bg-white text-[#1f3a5f] font-extrabold px-5 py-2">Restablecer demostración</BotonConfirmar>
+        </form>
+      )}
+
       {ok && (
         <p className="rounded-[16px] bg-cafe/15 text-cafe font-extrabold px-4 py-3" role="status">
-          ✅ Guardado: {NOMBRES[ok] ?? ok}.
+          {ok === "demo" ? "✅ Demostración restablecida: todo volvió a los datos de ejemplo." : `✅ Guardado: ${NOMBRES[ok] ?? ok}.`}
         </p>
       )}
       {error && (

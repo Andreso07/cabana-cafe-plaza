@@ -16,6 +16,8 @@ import { cifrasVisitas } from "@/lib/resenas";
 import { URL_SITIO } from "@/lib/sitio";
 import { direccionesImagenes } from "@/lib/imagenesSitio";
 import { estiloPaleta } from "@/lib/paletas";
+import { esDemo } from "@/lib/demo";
+import { FranjaDemo } from "@/components/FranjaDemo";
 import "./globals.css";
 
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
@@ -39,6 +41,8 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: { card: "summary_large_image", title: titulo, description: descripcion, images: [img.og] },
     ...(img.logo !== "/logo.svg" ? { icons: { icon: img.logo, apple: img.logo } } : {}),
     ...(c.googleVerificacion ? { verification: { google: c.googleVerificacion } } : {}),
+    // La demostración no debe salir en Google (además de robots.txt, que solo es una petición).
+    ...(esDemo() ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -64,6 +68,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${nunito.variable} ${baloo.variable} h-full antialiased`} style={estiloPaleta(cfg.paleta)}>
       <body className="min-h-full flex flex-col font-sans overflow-x-hidden">
+        {esDemo() && <FranjaDemo />}
         {promo && <FranjaPromo nombre={promo.nombre} porcentaje={promo.porcentaje} hasta={promo.compraHasta} regalo={regalo} />}
         {temporada && <Temporada tema={temporada} parte="franja" mensaje={temporada === "navidad" ? cfg.mensajeNavidad : cfg.mensajeHalloween} />}
         <header className="sticky top-0 z-40 backdrop-blur-xl bg-crema/90 border-b border-cafe/10">
