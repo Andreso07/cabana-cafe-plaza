@@ -11,6 +11,10 @@ import { pesos, promoAbierta } from "@/lib/precios";
 import { describirMeses, NOMBRES_MES } from "@/config/cabana";
 import { listarCodigos } from "@/lib/codigos";
 import { FRASES_BASE, PALABRAS_BASE } from "@/lib/palabras";
+import { diaMes, temporadaDeHoy } from "@/lib/temporada";
+
+/** «12-01» → «1/12», para escribirlo en el formulario. */
+const diaMesCorto = (mmdd: string) => `${Number(mmdd.slice(3))}/${Number(mmdd.slice(0, 2))}`;
 import {
   agregarCodigo,
   agregarDescuento,
@@ -80,6 +84,7 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
   const sync = typeof sp.sync === "string" && /^\d+-\d+-\d+$/.test(sp.sync) ? sp.sync.split("-") : null;
   const [cfg, externo, codigos] = await Promise.all([leerConfig(), eventosExternos(), listarCodigos()]);
   const hoy = hoyEnColombia();
+  const temporadaHoy = temporadaDeHoy(cfg, hoy);
   const h = await headers();
   const origen = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const enlaceIcs = cfg.calendarioToken ? `${origen}/api/calendario/${cfg.calendarioToken}.ics` : null;
@@ -111,13 +116,14 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
       <Tarjeta
         id="temporada"
         titulo="🎉 Temporada"
-        ayuda="Viste la web para una fecha: una franja con tu mensaje, luces bajo la barra de arriba y nieve (Navidad) o murciélagos (Halloween). Vuelve a «Normal» cuando pase."
+        ayuda="Viste la web para una fecha: una franja con tu mensaje, luces bajo la barra de arriba y nieve (Navidad) o murciélagos (Halloween). En «Automático» se prende y se apaga sola cada año en las fechas de abajo."
       >
         <form action={guardarTemporada} className="grid gap-4 md:grid-cols-2 items-end">
           <fieldset className="md:col-span-2 flex flex-wrap gap-2">
             <legend className={`${etiqueta} mb-1.5`}>Modo de la web</legend>
             {(
               [
+                ["auto", "🗓️ Automático por fechas"],
                 ["ninguna", "Normal"],
                 ["navidad", "🎄 Navidad"],
                 ["halloween", "🎃 Halloween"],
@@ -129,8 +135,21 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
               </label>
             ))}
           </fieldset>
-          <Campo nombre="mensajeNavidad" titulo="Mensaje de Navidad" valor={cfg.mensajeNavidad} maxLength={120} ayuda="Sugerido: del 1 de diciembre al 7 de enero." />
-          <Campo nombre="mensajeHalloween" titulo="Mensaje de Halloween" valor={cfg.mensajeHalloween} maxLength={120} ayuda="Sugerido: del 20 al 31 de octubre." />
+          <p className="md:col-span-2 rounded-[14px] bg-crema px-3 py-2 text-sm font-bold">
+            Hoy la web está en:{" "}
+            {temporadaHoy === "navidad" ? "🎄 Navidad" : temporadaHoy === "halloween" ? "🎃 Halloween" : "Normal"}
+            {cfg.temporada === "auto" && !temporadaHoy && ` · la Navidad se enciende sola el ${diaMes(cfg.fechasNavidad.desde)}`}
+          </p>
+          <Campo nombre="mensajeNavidad" titulo="Mensaje de Navidad" valor={cfg.mensajeNavidad} maxLength={120} />
+          <Campo nombre="mensajeHalloween" titulo="Mensaje de Halloween" valor={cfg.mensajeHalloween} maxLength={120} />
+          <div className="grid grid-cols-2 gap-2">
+            <Campo nombre="navidadDesde" titulo="Navidad desde (día/mes)" valor={diaMesCorto(cfg.fechasNavidad.desde)} placeholder="1/12" />
+            <Campo nombre="navidadHasta" titulo="hasta" valor={diaMesCorto(cfg.fechasNavidad.hasta)} placeholder="7/1" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Campo nombre="halloweenDesde" titulo="Halloween desde (día/mes)" valor={diaMesCorto(cfg.fechasHalloween.desde)} placeholder="20/10" />
+            <Campo nombre="halloweenHasta" titulo="hasta" valor={diaMesCorto(cfg.fechasHalloween.hasta)} placeholder="31/10" />
+          </div>
           <div><button className={guardarBtn}>Guardar</button></div>
         </form>
       </Tarjeta>

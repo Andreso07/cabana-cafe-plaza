@@ -18,6 +18,8 @@ export const leerConfig = cache(async (): Promise<Config> => {
     precios: { ...CONFIG_INICIAL.precios, ...(guardada.precios ?? {}) },
     preciosGrupo: { ...CONFIG_INICIAL.preciosGrupo, ...(guardada.preciosGrupo ?? {}) },
     redes: { ...CONFIG_INICIAL.redes, ...(guardada.redes ?? {}) },
+    fechasNavidad: { ...CONFIG_INICIAL.fechasNavidad, ...(guardada.fechasNavidad ?? {}) },
+    fechasHalloween: { ...CONFIG_INICIAL.fechasHalloween, ...(guardada.fechasHalloween ?? {}) },
     // Antes de las temporadas solo existía el interruptor de Navidad: si está prendido, se respeta.
     temporada: guardada.temporada ?? (guardada.modoNavidad ? "navidad" : "ninguna"),
   };

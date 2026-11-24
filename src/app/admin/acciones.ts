@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
+import { leerDiaMes } from "@/lib/temporada";
 import { cerrarSesion, cerrarTodasLasSesiones, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida, hoyEnColombia } from "@/lib/fechas";
@@ -150,12 +151,26 @@ export async function guardarPalabras(form: FormData) {
 export async function guardarTemporada(form: FormData) {
   await guardar("temporada", async () => {
     const elegida = texto(form, "temporada", 12);
-    const temporada = elegida === "navidad" || elegida === "halloween" ? elegida : "ninguna";
+    const temporada = elegida === "navidad" || elegida === "halloween" || elegida === "auto" ? elegida : "ninguna";
     const navidad = texto(form, "mensajeNavidad", 120);
     const halloween = texto(form, "mensajeHalloween", 120);
+    // Fechas del modo automático, escritas como día/mes («1/12»). Vacías: se dejan las que había.
+    const periodo = (clave: string, nombre: string) => {
+      const d = texto(form, `${clave}Desde`, 10);
+      const h = texto(form, `${clave}Hasta`, 10);
+      if (!d && !h) return null;
+      const desde = leerDiaMes(d);
+      const hasta = leerDiaMes(h);
+      if (!desde || !hasta) throw new Invalido(`${nombre}: escribe las fechas como día/mes, por ejemplo 1/12`);
+      return { desde, hasta };
+    };
+    const fechasNavidad = periodo("navidad", "Fechas de Navidad");
+    const fechasHalloween = periodo("halloween", "Fechas de Halloween");
     return {
       temporada,
       modoNavidad: temporada === "navidad",
+      ...(fechasNavidad ? { fechasNavidad } : {}),
+      ...(fechasHalloween ? { fechasHalloween } : {}),
       ...(navidad ? { mensajeNavidad: navidad } : {}),
       ...(halloween ? { mensajeHalloween: halloween } : {}),
     };

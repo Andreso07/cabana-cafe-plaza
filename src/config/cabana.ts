@@ -71,7 +71,11 @@ export type Plan = {
   sugerir?: "ninguno" | "martes" | "viernes" | "sabado" | "domingo" | "puente" | "festivo";
 };
 
-export type Temporada = "ninguna" | "navidad" | "halloween";
+/** «auto»: la web elige sola según las fechas de cada temporada (cada año). */
+export type Temporada = "auto" | "ninguna" | "navidad" | "halloween";
+
+/** Días del año en formato «MM-DD» (sin año: se repiten cada año). */
+export type Periodo = { desde: string; hasta: string };
 
 export type Config = {
   negocio: string;
@@ -138,6 +142,9 @@ export type Config = {
   // Temporada: viste la web (franja con mensaje, luces bajo la barra y nieve o murciélagos). Se
   // elige en el panel. `modoNavidad` es el interruptor de la v0.11, que se lee si no hay temporada.
   temporada: Temporada;
+  // Fechas del modo automático. Navidad cruza de año (1 dic → 7 ene).
+  fechasNavidad: Periodo;
+  fechasHalloween: Periodo;
   modoNavidad: boolean;
   mensajeNavidad: string;
   mensajeHalloween: string;
@@ -241,6 +248,8 @@ export const CONFIG_INICIAL: Config = {
   googleIcalUrl: "",
   calendarioToken: "",
   temporada: "ninguna",
+  fechasNavidad: { desde: "12-01", hasta: "01-07" },
+  fechasHalloween: { desde: "10-20", hasta: "10-31" },
   modoNavidad: false,
   mensajeNavidad: "🎄 ¡Feliz Navidad! Celebra el fin de año entre cafetales y montañas",
   mensajeHalloween: "🎃 ¡Feliz Halloween! Una noche de miedo (y de descanso) entre cafetales",

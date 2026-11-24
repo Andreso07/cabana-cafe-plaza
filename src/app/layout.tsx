@@ -5,6 +5,7 @@ import { Ola } from "@/components/Ola";
 import { Baloo_2, Nunito } from "next/font/google";
 import { Clarity } from "@/components/Clarity";
 import { Temporada } from "@/components/Temporada";
+import { temporadaDeHoy } from "@/lib/temporada";
 import { FranjaPromo } from "@/components/FranjaPromo";
 import { promoVigente } from "@/lib/precios";
 import { ganadorasDelRegalo } from "@/lib/regalos";
@@ -42,7 +43,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const whatsapp = `https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(
     `Hola, quiero información sobre ${cfg.nombre}`,
   )}`;
-  const temporada = cfg.temporada === "ninguna" ? null : cfg.temporada;
+  // Navidad o Halloween: elegida a mano o, en automático, según la fecha de hoy.
+  const temporada = temporadaDeHoy(cfg);
   // Promoción por fecha de compra abierta hoy (Black Friday): franja negra con cuenta regresiva.
   const promo = promoVigente(cfg.descuentos);
   // Cupos de regalo que quedan (si la base falla, la franja sale sin el contador, nunca con uno inventado).
