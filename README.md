@@ -28,13 +28,17 @@ Sin llaves de Wompi la web funciona en **modo simulado**: al reservar aparece un
 
 ## Qué cambiar antes de publicar
 
-| Qué | Dónde |
+Casi todo se cambia desde el panel (/admin → Configuración), sin tocar código:
+
+| Qué | Dónde, en el panel |
 |---|---|
-| Precios, temporadas, anticipo, noches mínimas | `src/config/cabana.ts` → `PRECIOS` |
-| WhatsApp, enlace de Maps, número de RNT | `src/config/cabana.ts` → `CABANA` |
-| Servicios y reglas | `src/config/cabana.ts` |
-| Condiciones de cancelación | `src/app/condiciones/page.tsx` |
-| Datos del responsable (Ley 1581) | `src/app/privacidad/page.tsx` |
+| Logo, foto del banner, colores, descripción para Google, Clarity | 🎨 Marca |
+| Nombre, ubicación, redes, responsable de los datos (Ley 1581), RNT | Textos y ubicación |
+| Precios, capacidad, anticipo, llave Bre-B / Nequi | Precios y pago |
+| Planes, servicios, reglas, cancelación, «Qué hacer cerca» | Planes · Servicios y reglas |
+| Descuentos, promociones, códigos, temporadas | Descuentos · Códigos · Temporada |
+
+Para montar este sistema para **otra cabaña**, sigue [docs/INSTALAR-CLIENTE-NUEVO.md](docs/INSTALAR-CLIENTE-NUEVO.md).
 
 ## Cómo funciona una reserva
 

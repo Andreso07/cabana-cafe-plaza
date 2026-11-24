@@ -29,7 +29,7 @@ export default async function QueHacerCerca() {
         Qué hacer cerca de la cabaña
       </h1>
       <p className="mt-2 font-semibold text-suave">
-        {cfg.nombre} está en la {cfg.vereda}, {cfg.municipio} ({cfg.departamento}). {cfg.comoLlegar} Esto es lo que
+        {cfg.nombre} está en {cfg.vereda ? `la ${cfg.vereda}, ` : ""}{cfg.municipio} ({cfg.departamento}). {cfg.comoLlegar} Esto es lo que
         puedes conocer en tu escapada.
       </p>
 

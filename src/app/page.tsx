@@ -81,7 +81,7 @@ export default async function Inicio() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-16 text-white">
-          <Etiqueta>🏡 {cfg.vereda} · {cfg.municipio}</Etiqueta>
+          <Etiqueta>🏡 {[cfg.vereda, cfg.municipio].filter(Boolean).join(" · ")}</Etiqueta>
           {/* Las palabras suben una por una y cada una del destacado se subraya como a mano (.titulo-vivo). */}
           <h1 className="titulo-vivo font-titulo mt-4 text-[40px] sm:text-[60px] leading-[0.95] font-extrabold tracking-tight">
             {titulo.map((palabra, i) => (

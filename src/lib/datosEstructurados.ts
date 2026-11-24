@@ -22,7 +22,7 @@ export function fichaDelAlojamiento(
     "@type": "LodgingBusiness",
     "@id": `${URL_SITIO}/#alojamiento`,
     name: cfg.nombre,
-    description: `${cfg.heroSubtitulo} Cabaña completa para hasta ${cfg.capacidad} personas en ${cfg.vereda}, ${cfg.municipio}, ${cfg.departamento}.`,
+    description: `${cfg.heroSubtitulo} Cabaña completa para hasta ${cfg.capacidad} personas en ${[cfg.vereda, cfg.municipio, cfg.departamento].filter(Boolean).join(", ")}.`,
     url: `${URL_SITIO}/`,
     image: `${URL_SITIO}${img.og}`,
     logo: `${URL_SITIO}${img.logo}`,

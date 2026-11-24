@@ -109,7 +109,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <footer className="bg-cafe-oscuro">
           <div className="mx-auto max-w-[1120px] px-4 md:px-6 py-8 text-sm text-white/80 flex flex-col gap-2 sm:flex-row sm:justify-between">
             <p className="font-semibold">
-              {cfg.nombre} · {cfg.negocio} · {cfg.vereda}, {cfg.municipio}, {cfg.departamento}
+              {[cfg.nombre, cfg.negocio !== cfg.nombre ? cfg.negocio : "", [cfg.vereda, cfg.municipio, cfg.departamento].filter(Boolean).join(", ")]
+                .filter(Boolean)
+                .join(" · ")}
               {cfg.rnt && <> · RNT {cfg.rnt}</>}
               <span className="block mt-1 text-xs">
                 👀 {visitas.toLocaleString("es-CO")} {visitas === 1 ? "visita" : "visitas"}
