@@ -147,7 +147,9 @@ export function cotizar(
   // Se aplica el mejor descuento disponible; no se acumulan.
   const mejor = cfg.descuentos
     .filter((d) => aplica(d, entrada, lista))
-    .sort((a, b) => b.porcentaje - a.porcentaje)[0];
+    // En un empate gana la promoción por fecha de compra (Black Friday): así la reserva queda con su
+    // nombre y cuenta para el regalo de las primeras reservas, aunque otro descuento rebaje lo mismo.
+    .sort((a, b) => b.porcentaje - a.porcentaje || Number(b.tipo === "compra") - Number(a.tipo === "compra"))[0];
   let descuento: Cotizacion["descuento"] = mejor
     ? { nombre: mejor.nombre, porcentaje: mejor.porcentaje, valor: aMil((subtotal * mejor.porcentaje) / 100) }
     : null;
