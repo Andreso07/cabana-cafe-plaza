@@ -145,3 +145,16 @@ create table if not exists panel_sesiones (
 );
 insert into panel_sesiones (id) values (1) on conflict (id) do nothing;
 alter table panel_sesiones enable row level security;
+
+-- Imágenes de la marca que el dueño sube desde el panel: logo, banner (grande y para celular) y la
+-- imagen de vista previa al compartir el enlace. Una fila por imagen; si no hay, la web usa las de
+-- public/. Así otra cabaña cambia su imagen sin tocar código.
+create table if not exists imagenes_sitio (
+  clave          text primary key check (clave in ('logo', 'banner', 'banner-m', 'og')),
+  tipo           text not null check (tipo in ('image/jpeg', 'image/png')),
+  imagen         bytea not null,
+  ancho          integer not null,
+  alto           integer not null,
+  actualizado_en timestamptz not null default now()
+);
+alter table imagenes_sitio enable row level security;

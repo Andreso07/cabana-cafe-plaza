@@ -11,6 +11,9 @@ import { pesos, promoAbierta } from "@/lib/precios";
 import { describirMeses, NOMBRES_MES } from "@/config/cabana";
 import { listarCodigos } from "@/lib/codigos";
 import { FRASES_BASE, PALABRAS_BASE } from "@/lib/palabras";
+import { direccionesImagenes, POR_DEFECTO } from "@/lib/imagenesSitio";
+import { PALETAS } from "@/lib/paletas";
+import { SubirImagenMarca } from "@/components/SubirImagenMarca";
 import { diaMes, temporadaDeHoy } from "@/lib/temporada";
 
 /** «12-01» → «1/12», para escribirlo en el formulario. */
@@ -23,6 +26,7 @@ import {
   guardarCalendario,
   guardarListas,
   guardarPalabras,
+  guardarMarca,
   guardarTemporada,
   guardarPlanes,
   guardarPrecios,
@@ -52,6 +56,7 @@ const NOMBRES: Record<string, string> = {
   codigos: "Códigos de colaboradores",
   temporada: "Temporada",
   palabras: "Palabras no permitidas",
+  marca: "Marca",
 };
 
 function Tarjeta({ id, titulo, ayuda, children }: { id: string; titulo: string; ayuda?: string; children: React.ReactNode }) {
@@ -83,7 +88,7 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
   const ok = typeof sp.ok === "string" ? sp.ok : null;
   const error = typeof sp.error === "string" ? sp.error : null;
   const sync = typeof sp.sync === "string" && /^\d+-\d+-\d+$/.test(sp.sync) ? sp.sync.split("-") : null;
-  const [cfg, externo, codigos] = await Promise.all([leerConfig(), eventosExternos(), listarCodigos()]);
+  const [cfg, externo, codigos, img] = await Promise.all([leerConfig(), eventosExternos(), listarCodigos(), direccionesImagenes()]);
   const hoy = hoyEnColombia();
   const temporadaHoy = temporadaDeHoy(cfg, hoy);
   const h = await headers();
@@ -572,6 +577,46 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
         </form>
       </Tarjeta>
 
+      <Tarjeta
+        id="marca"
+        titulo="🎨 Marca"
+        ayuda="Logo, foto principal, colores y los datos para Google. Con esto la web se adapta a otra cabaña sin tocar código."
+      >
+        <div className="grid gap-6 md:grid-cols-[200px_1fr]">
+          <SubirImagenMarca tipo="logo" actual={img.logo} esPropia={img.logo !== POR_DEFECTO.logo} />
+          <SubirImagenMarca tipo="banner" actual={img.banner} esPropia={img.banner !== POR_DEFECTO.banner} />
+        </div>
+        <p className="mt-2 text-xs font-semibold text-suave">
+          La foto del banner también se usa, recortada, como vista previa al compartir el enlace por WhatsApp o Facebook.
+        </p>
+        <form action={guardarMarca} className="mt-6 grid gap-4 md:grid-cols-2">
+          <fieldset className="md:col-span-2 grid gap-2">
+            <legend className={`${etiqueta} mb-1`}>Colores de la web</legend>
+            <div className="flex flex-wrap gap-2">
+              {PALETAS.map((p) => (
+                <label key={p.id} className="flex items-center gap-2 rounded-full border-2 border-black/10 bg-white px-3 py-2 text-sm font-extrabold has-[:checked]:border-cafe has-[:checked]:bg-cafe/10">
+                  <input type="radio" name="paleta" value={p.id} defaultChecked={cfg.paleta === p.id} className="accent-[var(--cafe)]" />
+                  <span className="flex" aria-hidden>
+                    {[p.vars.teja, p.vars.cafe, p.vars.sol, p.vars.arena].map((c) => (
+                      <span key={c} className="-ml-1 size-4 rounded-full border-2 border-white first:ml-0" style={{ background: c }} />
+                    ))}
+                  </span>
+                  {p.nombre}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <Campo nombre="descripcionBanner" titulo="Qué se ve en la foto del banner" valor={cfg.descripcionBanner} maxLength={150} ayuda="Para personas que no ven bien y para Google Imágenes." />
+          <label className={etiqueta}>
+            Descripción para Google <span className="font-semibold text-suave">(menos de 160 letras; {"{capacidad}"} pone el número de personas)</span>
+            <textarea name="descripcionGoogle" rows={3} maxLength={200} className={campo} defaultValue={cfg.descripcionGoogle} />
+          </label>
+          <Campo nombre="clarityId" titulo="Número de Microsoft Clarity" valor={cfg.clarityId} maxLength={20} ayuda="Clarity → Configuración → Instalación. Vacío: sin mapas de calor." />
+          <Campo nombre="googleVerificacion" titulo="Verificación de Google Search Console" valor={cfg.googleVerificacion} maxLength={300} ayuda="Pega la «Etiqueta HTML» que da Search Console. Vacío si verificaste con archivo." />
+          <div className="md:col-span-2"><button className={guardarBtn}>Guardar marca</button></div>
+        </form>
+      </Tarjeta>
+
       <Tarjeta id="textos" titulo="Textos y ubicación">
         <form action={guardarTextos} className="grid gap-4 md:grid-cols-2">
           <Campo nombre="nombre" titulo="Nombre de la cabaña" valor={cfg.nombre} required />
@@ -620,6 +665,15 @@ export default async function Configuracion({ searchParams }: PageProps<"/admin/
           <label className={`${etiqueta} md:col-span-2`}>
             Política de cancelación
             <textarea name="cancelacion" rows={5} className={campo} defaultValue={cfg.cancelacion.join("\n")} />
+          </label>
+          <label className={`${etiqueta} md:col-span-2`}>
+            Qué hacer cerca: <span className="font-semibold text-suave">ícono | título | texto, uno por línea. Vacío: la página no aparece.</span>
+            <textarea
+              name="queHacer"
+              rows={8}
+              className={campo}
+              defaultValue={cfg.queHacer.map((p) => `${p.icono} | ${p.titulo} | ${p.texto}`).join("\n")}
+            />
           </label>
           <div className="md:col-span-2"><button className={guardarBtn}>Guardar servicios y reglas</button></div>
         </form>

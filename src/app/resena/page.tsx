@@ -5,7 +5,7 @@ import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Deja tu reseña · Cabaña Café Plaza" };
+export const metadata = { title: "Deja tu reseña" };
 
 export default async function Resena() {
   const cfg = await leerConfig();

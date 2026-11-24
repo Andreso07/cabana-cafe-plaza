@@ -8,7 +8,11 @@ import { URL_SITIO } from "./sitio";
  * pueden mostrarla con estrellas y precio. Todo sale de la configuración del panel y de las
  * reseñas aprobadas: nada se inventa (Google castiga las calificaciones falsas).
  */
-export function fichaDelAlojamiento(cfg: Config, opiniones: { promedio: number | null; total: number }) {
+export function fichaDelAlojamiento(
+  cfg: Config,
+  opiniones: { promedio: number | null; total: number },
+  img: { logo: string; og: string } = { logo: "/logo.svg", og: "/vista-previa.jpg" },
+) {
   const coords = coordenadasDe(cfg.mapsUrl);
   const precios = [...Object.values(cfg.precios), ...Object.values(cfg.preciosGrupo)].filter((p) => p > 0);
   const pesos = (n: number) => `$${n.toLocaleString("es-CO")}`;
@@ -20,8 +24,8 @@ export function fichaDelAlojamiento(cfg: Config, opiniones: { promedio: number |
     name: cfg.nombre,
     description: `${cfg.heroSubtitulo} Cabaña completa para hasta ${cfg.capacidad} personas en ${cfg.vereda}, ${cfg.municipio}, ${cfg.departamento}.`,
     url: `${URL_SITIO}/`,
-    image: `${URL_SITIO}/opengraph-image.jpg`,
-    logo: `${URL_SITIO}/logo.svg`,
+    image: `${URL_SITIO}${img.og}`,
+    logo: `${URL_SITIO}${img.logo}`,
     telephone: `+${cfg.whatsapp}`,
     priceRange: precios.length ? `${pesos(Math.min(...precios))} - ${pesos(Math.max(...precios))} COP por noche` : undefined,
     currenciesAccepted: "COP",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { leerConfig } from "@/lib/config";
 
-export const metadata = { title: "Tratamiento de datos · Cabaña Café Plaza" };
+export const metadata = { title: "Tratamiento de datos" };
 
 export const dynamic = "force-dynamic";
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LIMITES } from "@/config/cabana";
 import { leerConfig } from "@/lib/config";
 
-export const metadata = { title: "Condiciones de reserva · Cabaña Café Plaza" };
+export const metadata = { title: "Condiciones de reserva" };
 
 export const dynamic = "force-dynamic";
 

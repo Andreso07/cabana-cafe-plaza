@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { bloqueado, registrarIntento } from "@/lib/limite";
 import type { Descuento, Plan, Servicio } from "@/config/cabana";
 import { leerDiaMes } from "@/lib/temporada";
+import { PALETAS } from "@/lib/paletas";
 import { cerrarSesion, cerrarTodasLasSesiones, credencialesCorrectas, esAdmin, iniciarSesion, usuarioConfigurado } from "@/lib/admin";
 import { guardarConfig, leerConfig } from "@/lib/config";
 import { esFechaValida, hoyEnColombia } from "@/lib/fechas";
@@ -135,6 +136,30 @@ export async function desbloquear(form: FormData) {
 }
 
 // ---------- Configuración ----------
+
+/** Marca: colores, textos para Google y números de servicios externos (Clarity, Search Console). */
+export async function guardarMarca(form: FormData) {
+  await guardar("marca", async () => {
+    const paleta = texto(form, "paleta", 20);
+    if (!PALETAS.some((p) => p.id === paleta)) throw new Invalido("Elige una de las paletas de colores");
+    const clarityId = texto(form, "clarityId", 20);
+    if (clarityId && !/^[a-z0-9]{6,20}$/i.test(clarityId)) throw new Invalido("El número de Clarity son solo letras y números (lo ves en Clarity → Configuración)");
+    // Search Console da una etiqueta entera; se guarda solo el código de content="…".
+    const verificacion = texto(form, "googleVerificacion", 300);
+    const googleVerificacion = (verificacion.match(/content=["']([^"']+)["']/)?.[1] ?? verificacion).trim();
+    if (googleVerificacion && !/^[A-Za-z0-9_-]{10,100}$/.test(googleVerificacion)) throw new Invalido("Verificación de Google: pega la etiqueta que da Search Console o solo su código");
+    const descripcionGoogle = texto(form, "descripcionGoogle", 200);
+    if (descripcionGoogle.length < 30) throw new Invalido("Descripción para Google: escribe al menos una frase (30 letras)");
+    const descripcionBanner = texto(form, "descripcionBanner", 150);
+    return {
+      paleta,
+      clarityId,
+      googleVerificacion,
+      descripcionGoogle,
+      ...(descripcionBanner ? { descripcionBanner } : {}),
+    };
+  });
+}
 
 /** Palabras o frases extra del filtro de lenguaje (una por línea, hasta 200). */
 export async function guardarPalabras(form: FormData) {
@@ -271,6 +296,17 @@ export async function guardarListas(form: FormData) {
       servicios,
       noIncluye: lineas(form, "noIncluye"),
       reglas: lineas(form, "reglas"),
+      // Qué hacer cerca: «ícono | título | texto» por línea; hasta 12 planes.
+      queHacer: texto(form, "queHacer", 8000)
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .slice(0, 12)
+        .map((l) => {
+          const [icono = "📍", titulo = "", ...resto] = l.split("|").map((p) => p.trim());
+          return { icono: icono.slice(0, 8), titulo: titulo.slice(0, 60), texto: resto.join(" | ").slice(0, 400) };
+        })
+        .filter((p) => p.titulo && p.texto),
       cancelacion: lineas(form, "cancelacion"),
     };
   });

@@ -11,6 +11,9 @@ export const LIMITES = {
 
 export type Servicio ={ icono: string; titulo: string; detalle: string };
 
+/** Un plan de la página «Qué hacer cerca». */
+export type PlanCercano = { icono: string; titulo: string; texto: string };
+
 /** Fechas con precio propio por noche (temporadas, Carnaval, eventos). Ambos días incluidos. */
 export type FechaEspecial = {
   id: string;
@@ -152,6 +155,14 @@ export type Config = {
   // Palabras o frases que el dueño agrega al filtro de lenguaje (además de la lista base de
   // src/lib/palabras.ts). Se rechazan en reseñas, fotos y reservas.
   palabrasProhibidas: string[];
+
+  // Marca (para vender el sistema a otra cabaña sin tocar código).
+  paleta: string; // id de src/lib/paletas.ts
+  clarityId: string; // Microsoft Clarity; vacío = sin medición
+  googleVerificacion: string; // código de la etiqueta HTML de Google Search Console; vacío = no se pone
+  descripcionGoogle: string; // descripción para buscadores; {capacidad} se reemplaza por el número
+  descripcionBanner: string; // texto alternativo de la foto del banner (lectores de pantalla, Google Imágenes)
+  queHacer: PlanCercano[]; // página «Qué hacer cerca»; vacía = la página no existe
 };
 
 export const CONFIG_INICIAL: Config = {
@@ -254,4 +265,19 @@ export const CONFIG_INICIAL: Config = {
   mensajeNavidad: "🎄 ¡Feliz Navidad! Celebra el fin de año entre cafetales y montañas",
   mensajeHalloween: "🎃 ¡Feliz Halloween! Una noche de miedo (y de descanso) entre cafetales",
   palabrasProhibidas: [],
+  paleta: "cafetal",
+  clarityId: "zgpoalct90",
+  googleVerificacion: "",
+  descripcionGoogle:
+    "Cabaña privada entre cafetales en Consacá, Nariño, cerca de Sandoná y Pasto. Hasta {capacidad} personas, vista a las montañas y reserva en línea.",
+  descripcionBanner: "cabaña con techo de teja roja y frente de vidrio entre cafetales, con montañas al fondo",
+  queHacer: [
+    { icono: "☕", titulo: "Cafetales de Nariño", texto: "La cabaña está entre cafetales. Nariño es reconocido por su café de altura: madruga con una taza, camina entre las matas y mira cómo cambia la montaña con la luz." },
+    { icono: "⛪", titulo: "Sandoná y su Basílica", texto: "El pueblo vecino es famoso por la Basílica de Nuestra Señora del Rosario, levantada en piedra por su propia gente, y por los sombreros y artesanías tejidos en paja toquilla. Ideal para una tarde de paseo y compras." },
+    { icono: "🏛️", titulo: "Bomboná, historia en Consacá", texto: "En Consacá se libró en 1822 la Batalla de Bomboná, de la campaña de independencia. El sitio histórico y su monumento quedan muy cerca." },
+    { icono: "🌋", titulo: "Faldas del Galeras", texto: "Consacá está en las faldas del volcán Galeras. Los paisajes de montaña, los miradores y los atardeceres de la zona son el mejor plan sin salir de la cabaña." },
+    { icono: "🍯", titulo: "Trapiches de panela", texto: "En la región de Sandoná y Consacá se cultiva caña y se hace panela en trapiches tradicionales. Pregunta en la zona y prueba la panela recién hecha." },
+    { icono: "🍲", titulo: "Comida típica", texto: "No te vayas sin probar el cuy asado, las empanadas de añejo y el helado de paila, clásicos de la cocina nariñense." },
+    { icono: "🎭", titulo: "Carnaval de Negros y Blancos", texto: "En los primeros días de enero, Pasto celebra su carnaval, Patrimonio de la Humanidad. Una escapada a la cabaña es un buen descanso antes o después de la fiesta." },
+  ],
 };

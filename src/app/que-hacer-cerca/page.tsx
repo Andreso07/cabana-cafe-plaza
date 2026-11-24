@@ -1,67 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { leerConfig } from "@/lib/config";
 import { enlacesDelMapa } from "@/lib/mapa";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Qué hacer cerca de Consacá y Sandoná · Cabaña Café Plaza",
-  description:
-    "Planes cerca de la cabaña: la Basílica de Sandoná y sus sombreros de paja toquilla, el sitio histórico de Bomboná, cafetales, trapiches de panela y la comida típica de Nariño.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const cfg = await leerConfig();
+  return {
+    title: `Qué hacer cerca de ${cfg.municipio}`,
+    description: `Planes cerca de ${cfg.nombre}: ${cfg.queHacer.map((p) => p.titulo.toLowerCase()).join(", ")}.`.slice(0, 160),
+  };
+}
 
 /**
- * Página para buscadores y huéspedes: lo que hay para conocer alrededor. Son datos generales y
- * conocidos de la zona; el dueño la revisa y ajusta (horarios y precios cambian, por eso no se dan).
+ * Página para buscadores y huéspedes: lo que hay para conocer alrededor. Los planes se escriben en
+ * el panel (Configuración → Servicios y reglas → Qué hacer cerca). Sin planes, la página no existe.
  */
-const PLANES: { icono: string; titulo: string; texto: string }[] = [
-  {
-    icono: "☕",
-    titulo: "Cafetales de Nariño",
-    texto:
-      "La cabaña está entre cafetales. Nariño es reconocido por su café de altura: madruga con una taza, camina entre las matas y mira cómo cambia la montaña con la luz.",
-  },
-  {
-    icono: "⛪",
-    titulo: "Sandoná y su Basílica",
-    texto:
-      "El pueblo vecino es famoso por la Basílica de Nuestra Señora del Rosario, levantada en piedra por su propia gente, y por los sombreros y artesanías tejidos en paja toquilla. Ideal para una tarde de paseo y compras.",
-  },
-  {
-    icono: "🏛️",
-    titulo: "Bomboná, historia en Consacá",
-    texto:
-      "En Consacá se libró en 1822 la Batalla de Bomboná, de la campaña de independencia. El sitio histórico y su monumento quedan muy cerca.",
-  },
-  {
-    icono: "🌋",
-    titulo: "Faldas del Galeras",
-    texto:
-      "Consacá está en las faldas del volcán Galeras. Los paisajes de montaña, los miradores y los atardeceres de la zona son el mejor plan sin salir de la cabaña.",
-  },
-  {
-    icono: "🍯",
-    titulo: "Trapiches de panela",
-    texto:
-      "En la región de Sandoná y Consacá se cultiva caña y se hace panela en trapiches tradicionales. Pregunta en la zona y prueba la panela recién hecha.",
-  },
-  {
-    icono: "🍲",
-    titulo: "Comida típica",
-    texto:
-      "No te vayas sin probar el cuy asado, las empanadas de añejo y el helado de paila, clásicos de la cocina nariñense.",
-  },
-  {
-    icono: "🎭",
-    titulo: "Carnaval de Negros y Blancos",
-    texto:
-      "En los primeros días de enero, Pasto celebra su carnaval, Patrimonio de la Humanidad. Una escapada a la cabaña es un buen descanso antes o después de la fiesta.",
-  },
-];
-
 export default async function QueHacerCerca() {
   const cfg = await leerConfig();
+  if (cfg.queHacer.length === 0) notFound();
   const mapa = enlacesDelMapa(cfg.mapsUrl, `${cfg.nombre}, ${cfg.municipio}, ${cfg.departamento}`);
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
@@ -75,7 +34,7 @@ export default async function QueHacerCerca() {
       </p>
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-        {PLANES.map((p) => (
+        {cfg.queHacer.map((p) => (
           <li key={p.titulo} className="rounded-[22px] border-[3px] border-black/5 bg-white p-5">
             <h2 className="flex items-center gap-2 font-titulo text-xl font-extrabold">
               <span aria-hidden className="text-2xl">{p.icono}</span> {p.titulo}

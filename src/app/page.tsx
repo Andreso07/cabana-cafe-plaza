@@ -14,6 +14,7 @@ import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { Ola } from "@/components/Ola";
 import { enlacesDelMapa } from "@/lib/mapa";
 import { comoScript, fichaDelAlojamiento } from "@/lib/datosEstructurados";
+import { direccionesImagenes } from "@/lib/imagenesSitio";
 import { AparecerAlBajar } from "@/components/AparecerAlBajar";
 import { IconoVivo } from "@/components/IconoVivo";
 import { IconosEnMovimiento } from "@/components/IconosEnMovimiento";
@@ -39,12 +40,13 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
 }
 
 export default async function Inicio() {
-  const [cfg, opiniones, fotos, fotosCabana] = await Promise.all([
+  const [cfg, opiniones, fotos, fotosCabana, img] = await Promise.all([
     leerConfig(),
     // Si las reseñas fallan, la página se muestra igual, sin esa sección llena.
     resenasPublicas(6).catch(() => ({ resenas: [], promedio: null, total: 0 })),
     fotosPublicas(8).catch(() => []),
     listarFotosCabana().catch(() => []),
+    direccionesImagenes(),
   ]);
 
 
@@ -60,17 +62,23 @@ export default async function Inicio() {
   return (
     <main>
       {/* Ficha para Google (no se ve): ver src/lib/datosEstructurados.ts */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: comoScript(fichaDelAlojamiento(cfg, opiniones)) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: comoScript(fichaDelAlojamiento(cfg, opiniones, img)) }} />
       {/* Banner */}
       <section id="banner" className="relative h-[72vh] min-h-[440px] w-full">
-        <Image
-          src="/cabana.jpg"
-          alt={`${cfg.nombre}: cabaña con techo de teja roja y frente de vidrio entre cafetales, con montañas al fondo`}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
+        {img.banner === "/cabana.jpg" ? (
+          <Image src="/cabana.jpg" alt={`${cfg.nombre}: ${cfg.descripcionBanner}`} fill priority sizes="100vw" className="object-cover" />
+        ) : (
+          // Banner subido en el panel: una versión liviana para celulares y una grande para pantallas anchas.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={img.banner}
+            srcSet={`${img["banner-m"]} 1000w, ${img.banner} 2000w`}
+            sizes="100vw"
+            alt={`${cfg.nombre}: ${cfg.descripcionBanner}`}
+            fetchPriority="high"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-[1120px] px-4 md:px-6 pb-16 text-white">
           <Etiqueta>🏡 {cfg.vereda} · {cfg.municipio}</Etiqueta>
@@ -379,9 +387,11 @@ export default async function Inicio() {
                 </li>
               ))}
             </ul>
-            <Link href="/que-hacer-cerca" className="mt-4 inline-flex items-center gap-2 rounded-full border-2 border-cafe/20 bg-crema px-4 py-2 text-sm font-extrabold text-cafe hover:border-cafe/50">
-              🧭 Qué hacer cerca: Sandoná, Bomboná, cafetales…
-            </Link>
+            {cfg.queHacer.length > 0 && (
+              <Link href="/que-hacer-cerca" className="mt-4 inline-flex items-center gap-2 rounded-full border-2 border-cafe/20 bg-crema px-4 py-2 text-sm font-extrabold text-cafe hover:border-cafe/50">
+                🧭 Qué hacer cerca: {cfg.queHacer.length} {cfg.queHacer.length === 1 ? "plan" : "planes"} para tu escapada
+              </Link>
+            )}
           </div>
           <div className="space-y-3">
             {/* Tocar la tarjeta abre Google Maps con la ruta desde donde esté la persona. */}

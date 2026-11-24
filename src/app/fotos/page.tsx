@@ -5,7 +5,7 @@ import { Redes } from "@/components/Redes";
 import { leerConfig } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Comparte tus fotos · Cabaña Café Plaza" };
+export const metadata = { title: "Comparte tus fotos" };
 
 export default async function Fotos() {
   const cfg = await leerConfig();
