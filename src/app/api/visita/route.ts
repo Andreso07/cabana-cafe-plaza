@@ -7,7 +7,8 @@ import { sumarVisita } from "@/lib/resenas";
 
 export async function POST(req: Request) {
   const agente = req.headers.get("user-agent") ?? "";
-  if (/bot|crawl|spider|slurp|preview|headless/i.test(agente)) return new NextResponse(null, { status: 204 });
+  // «lighthouse» y «pagespeed»: las mediciones de velocidad de Google (PageSpeed) no son visitas.
+  if (/bot|crawl|spider|slurp|preview|headless|lighthouse|pagespeed/i.test(agente)) return new NextResponse(null, { status: 204 });
   if (!excedeLimite(`visita:${ipDe(req)}`, 1, 10 * 60_000)) await sumarVisita();
   return new NextResponse(null, { status: 204 });
 }
