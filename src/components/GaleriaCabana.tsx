@@ -30,14 +30,17 @@ export function GaleriaCabana({ fotos, nombre }: { fotos: FotoCabana[]; nombre: 
   const ir = (paso: number) => setActual((a) => (a + paso + fotos.length) % fotos.length);
   const foto = fotos[actual];
 
-  const miniatura = (f: FotoCabana, i: number, clase: string) => (
+  // Las miniaturas pasan por el optimizador de imágenes: AVIF/WebP y al ancho con que se ven (en el
+  // celular pesaban ~50 KB cada una en JPEG). Se puede porque una foto nunca cambia: reemplazarla es
+  // subir otra, con otro número.
+  const miniatura = (f: FotoCabana, i: number, clase: string, sizes: string) => (
     <button key={f.id} type="button" onClick={() => abrir(i)} className={`group relative overflow-hidden rounded-[18px] bg-crema ${clase}`}>
       <Image
         src={url(f.id, true)}
         alt={alt(f, i)}
         width={640}
         height={Math.round((640 * f.alto) / f.ancho)}
-        unoptimized
+        sizes={sizes}
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
     </button>
@@ -48,14 +51,16 @@ export function GaleriaCabana({ fotos, nombre }: { fotos: FotoCabana[]; nombre: 
       {/* Celular: carrusel deslizable */}
       <div className="md:hidden -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
         {fotos.map((f, i) => (
-          miniatura(f, i, "aspect-[4/3] w-[82%] shrink-0 snap-center")
+          miniatura(f, i, "aspect-[4/3] w-[82%] shrink-0 snap-center", "82vw")
         ))}
       </div>
 
       {/* Computador: una grande y hasta cuatro pequeñas */}
       <div className={`hidden md:grid gap-3 ${fotos.length >= 5 ? "grid-cols-4 grid-rows-2 h-[440px]" : `${COLUMNAS[Math.min(fotos.length, 4)]} h-[320px]`}`}>
         {fotos.slice(0, 5).map((f, i) => (
-          miniatura(f, i, fotos.length >= 5 && i === 0 ? "col-span-2 row-span-2" : "")
+          fotos.length >= 5 && i === 0
+            ? miniatura(f, i, "col-span-2 row-span-2", "(max-width: 1120px) 50vw, 560px")
+            : miniatura(f, i, "", `(max-width: 1120px) ${fotos.length >= 5 ? 25 : Math.round(100 / Math.min(fotos.length, 4))}vw, 300px`)
         ))}
       </div>
 
