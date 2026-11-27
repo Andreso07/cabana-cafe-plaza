@@ -13,6 +13,7 @@ import { listarFotosCabana } from "@/lib/fotosCabana";
 import { GaleriaCabana } from "@/components/GaleriaCabana";
 import { Ola } from "@/components/Ola";
 import { enlacesDelMapa } from "@/lib/mapa";
+import { MapaDiferido } from "@/components/MapaDiferido";
 import { comoScript, fichaDelAlojamiento } from "@/lib/datosEstructurados";
 import { direccionesImagenes } from "@/lib/imagenesSitio";
 import { AparecerAlBajar } from "@/components/AparecerAlBajar";
@@ -408,13 +409,7 @@ export default async function Inicio() {
               </span>
             </a>
             {/* Mini mapa: se carga solo cuando la persona baja hasta aquí. */}
-            <iframe
-              src={mapa.incrustado}
-              title={`Mapa: ubicación de ${cfg.nombre}`}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="block h-52 w-full rounded-[20px] border-[3px] border-cafe/15"
-            />
+            <MapaDiferido src={mapa.incrustado} titulo={`Mapa: ubicación de ${cfg.nombre}`} />
             <div className="grid grid-cols-2 gap-2 text-sm font-extrabold">
               <a href={mapa.ruta} target="_blank" rel="noopener" className="rounded-full border-2 border-black/10 bg-crema px-3 py-2.5 text-center hover:border-cafe/40">
                 🗺️ Ruta en Google Maps

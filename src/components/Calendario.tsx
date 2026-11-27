@@ -287,7 +287,7 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                     title={especial ? noche.nombre : undefined}
                     aria-pressed={esEntrada || esSalida}
                   >
-                    <span className={festivo && !esEntrada && !esSalida ? "text-teja font-semibold" : ""}>
+                    <span className={festivo && !esEntrada && !esSalida ? "text-teja-oscura font-semibold" : ""}>
                       {Number(f.slice(8))}
                     </span>
                     {(esEntrada || esSalida) && (
