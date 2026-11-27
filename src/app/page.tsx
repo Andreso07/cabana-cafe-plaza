@@ -29,7 +29,7 @@ function Etiqueta({ children, tono = "teja" }: { children: React.ReactNode; tono
   const estilos = {
     teja: "bg-teja text-white shadow-[0_3px_0_var(--teja-oscura)]",
     cafe: "bg-cafe/15 text-cafe",
-    suave: "bg-teja/10 text-teja",
+    suave: "bg-teja/10 text-teja-oscura",
     sol: "bg-sol text-tinta",
   }[tono];
   return (
@@ -66,7 +66,7 @@ export default async function Inicio() {
       {/* Banner */}
       <section id="banner" className="relative h-[72vh] min-h-[440px] w-full">
         {img.banner === "/cabana.jpg" ? (
-          <Image src="/cabana.jpg" alt={`${cfg.nombre}: ${cfg.descripcionBanner}`} fill priority sizes="100vw" className="object-cover" />
+          <Image src="/cabana.jpg" alt={`${cfg.nombre}: ${cfg.descripcionBanner}`} fill priority fetchPriority="high" sizes="100vw" className="object-cover" />
         ) : (
           // Banner subido en el panel: una versión liviana para celulares y una grande para pantallas anchas.
           // eslint-disable-next-line @next/next/no-img-element
@@ -326,7 +326,7 @@ export default async function Inicio() {
             ))}
           </div>
           <div className="rounded-[28px] border-[3px] border-teja bg-white p-5 sm:p-6 shadow-[0_12px_0_var(--teja)]">
-            <p className="text-[11px] font-black tracking-widest text-teja/70">DEJA TU RESEÑA</p>
+            <p className="text-[11px] font-black tracking-widest text-teja-oscura">DEJA TU RESEÑA</p>
             <div className="mt-3">
               <FormularioResena />
             </div>

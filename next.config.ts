@@ -18,6 +18,12 @@ const cabeceras = [
 // a cada momento y se marcan con `dynamic = "force-dynamic"`.
 const nextConfig: NextConfig = {
   poweredByHeader: false, // no anunciar con qué está hecha la web
+  images: {
+    // AVIF pesa cerca de la mitad que WebP: la foto del banner llega antes en celulares lentos.
+    formats: ["image/avif", "image/webp"],
+    // Las fotos de public/ solo cambian al publicar una versión nueva; el celular las guarda 31 días.
+    minimumCacheTTL: 2_678_400,
+  },
   async headers() {
     return [{ source: "/:path*", headers: cabeceras }];
   },

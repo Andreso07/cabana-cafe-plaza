@@ -85,7 +85,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 className="size-10 shrink-0 rounded-[14px] shadow-[0_4px_0_var(--teja-oscura)]"
               />
               <span className="min-w-0">
-                <span className="block font-titulo font-extrabold text-lg leading-tight text-teja truncate">{cfg.nombre}</span>
+                <span className="block font-titulo font-extrabold text-[19px] leading-tight text-teja truncate">{cfg.nombre}</span>
                 <span className="block text-[11px] leading-[1.4] font-bold tracking-widest uppercase text-cafe truncate">
                   {cfg.municipio} · {cfg.departamento}
                 </span>
@@ -95,7 +95,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               href={whatsapp}
               target="_blank"
               rel="noopener"
-              className="boton-whatsapp palpito shrink-0 flex items-center gap-2 bg-[#25D366] text-white font-extrabold text-sm px-4 py-2.5 rounded-full"
+              className="boton-whatsapp palpito shrink-0 flex items-center gap-2 bg-[#15803d] text-white font-extrabold text-sm px-4 py-2.5 rounded-full"
             >
               <span aria-hidden>💬</span>
               <span className="hidden sm:inline">WhatsApp {telefono}</span>

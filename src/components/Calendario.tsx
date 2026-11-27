@@ -281,7 +281,9 @@ export function Calendario({ hoy, ultimoDia, ocupadas, entrada, salida, cfg, foc
                           ? { animationDelay: `${1 + Math.min(turno++, 30) * 0.07}s` }
                           : undefined
                     }
-                    aria-label={`${f}${ocupada ? ", ocupado" : ""}${sinServicio ? ", sin servicio" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
+                    // Empieza por el número que se ve en el botón («1 de noviembre de 2026»), para que
+                    // quien maneja la web por voz pueda decir «uno» y el lector lea una fecha clara.
+                    aria-label={`${Number(f.slice(8))} de ${MESES[Number(f.slice(5, 7)) - 1].toLowerCase()} de ${f.slice(0, 4)}${ocupada ? ", ocupado" : ""}${sinServicio ? ", sin servicio" : ""}${festivo ? ", festivo" : ""}${especial ? `, ${noche.nombre}` : ""}`}
                     title={especial ? noche.nombre : undefined}
                     aria-pressed={esEntrada || esSalida}
                   >

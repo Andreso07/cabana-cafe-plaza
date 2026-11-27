@@ -104,7 +104,7 @@ function ProximasLlegadas({ reservas, hoy, dias, cfg }: { reservas: Reserva[]; h
                         href={whatsappDe(r.telefono, recordatorio(r, cfg, hoy))}
                         target="_blank"
                         rel="noopener"
-                        className="mt-1 inline-block rounded-full bg-[#25D366] text-white px-3 py-1.5 text-xs font-extrabold"
+                        className="mt-1 inline-block rounded-full bg-[#15803d] text-white px-3 py-1.5 text-xs font-extrabold"
                       >
                         💬 Enviar recordatorio
                       </a>

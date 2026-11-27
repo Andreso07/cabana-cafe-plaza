@@ -200,7 +200,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
       <div
         className={`rounded-[28px] border-[3px] border-teja bg-white p-5 sm:p-6 shadow-[0_12px_0_var(--teja)] lg:sticky lg:top-24 ${cot ? "tarjeta-lista" : "tarjeta-agitada"}`}
       >
-        <p className="text-[11px] font-black tracking-widest text-teja/70">TU RESERVA</p>
+        <p className="text-[11px] font-black tracking-widest text-teja-oscura">TU RESERVA</p>
         {!cot ? (
           <div className="mt-2 text-suave">
             <p className="font-titulo text-[28px] font-extrabold text-tinta leading-none">
@@ -352,7 +352,7 @@ export function Reservar({ conWompi, cfg }: { conWompi: boolean; cfg: ConfigRese
             <button
               type="button"
               onClick={compartir}
-              className="boton-whatsapp flex items-center justify-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-extrabold text-white"
+              className="boton-whatsapp flex items-center justify-center gap-2 rounded-full bg-[#15803d] px-4 py-2.5 text-sm font-extrabold text-white"
             >
               <span aria-hidden>💬</span> Compartir con mi pareja o grupo
             </button>

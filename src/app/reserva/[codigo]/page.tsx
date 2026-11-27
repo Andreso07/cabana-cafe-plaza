@@ -80,7 +80,7 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
             href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(`Hola, gané el regalo del ${promoRegalo.nombre} con la reserva ${r.codigo}. Quiero agendar mi noche.`)}`}
             target="_blank"
             rel="noopener"
-            className="boton-whatsapp mt-3 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-sm font-extrabold text-white"
+            className="boton-whatsapp mt-3 inline-flex items-center gap-2 rounded-full bg-[#15803d] px-4 py-2 text-sm font-extrabold text-white"
           >
             💬 Agendar mi noche de regalo
           </a>
@@ -171,7 +171,7 @@ export default async function PaginaReserva({ params }: PageProps<"/reserva/[cod
                   href={`https://wa.me/${cfg.whatsapp}?text=${encodeURIComponent(mensajeComprobante)}`}
                   target="_blank"
                   rel="noopener"
-                  className="boton-whatsapp block text-center rounded-full bg-[#25D366] text-white font-extrabold py-3"
+                  className="boton-whatsapp block text-center rounded-full bg-[#15803d] text-white font-extrabold py-3"
                 >
                   Enviar comprobante por WhatsApp
                 </a>

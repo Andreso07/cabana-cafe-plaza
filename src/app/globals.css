@@ -62,10 +62,10 @@ body {
 .boton-goma:disabled { transform: none; box-shadow: 0 6px 0 var(--teja-oscura); }
 
 .boton-whatsapp {
-  box-shadow: 0 4px 0 #1da851;
+  box-shadow: 0 4px 0 #0f5a2b;
   transition: transform 0.12s, box-shadow 0.12s;
 }
-.boton-whatsapp:active { transform: translateY(2px); box-shadow: 0 2px 0 #1da851; }
+.boton-whatsapp:active { transform: translateY(2px); box-shadow: 0 2px 0 #0f5a2b; }
 
 @media (prefers-reduced-motion: reduce) {
   .boton-goma, .boton-whatsapp { transition: none; }
