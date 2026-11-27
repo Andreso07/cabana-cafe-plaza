@@ -67,7 +67,7 @@ export default async function Inicio() {
       {/* Banner */}
       <section id="banner" className="relative h-[72vh] min-h-[440px] w-full">
         {img.banner === "/cabana.jpg" ? (
-          <Image src="/cabana.jpg" alt={`${cfg.nombre}: ${cfg.descripcionBanner}`} fill priority fetchPriority="high" sizes="100vw" className="object-cover" />
+          <Image src="/cabana.jpg" alt={`${cfg.nombre}: ${cfg.descripcionBanner}`} fill priority fetchPriority="high" quality={60} sizes="100vw" className="object-cover" />
         ) : (
           // Banner subido en el panel: una versión liviana para celulares y una grande para pantallas anchas.
           // eslint-disable-next-line @next/next/no-img-element

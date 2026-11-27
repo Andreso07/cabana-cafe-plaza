@@ -41,6 +41,7 @@ export function GaleriaCabana({ fotos, nombre }: { fotos: FotoCabana[]; nombre: 
         width={640}
         height={Math.round((640 * f.alto) / f.ancho)}
         sizes={sizes}
+        quality={60}
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
     </button>

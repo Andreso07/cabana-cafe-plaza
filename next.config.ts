@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     // Las fotos de public/ solo cambian al publicar una versión nueva; el celular las guarda 31 días.
     minimumCacheTTL: 2_678_400,
+    // 60 para las fotos (banner y galería): en AVIF no se nota la diferencia y pesan menos.
+    qualities: [60, 75],
     // Imágenes propias que puede optimizar: los archivos de public/ (sin parámetros) y las
     // miniaturas de la galería (/api/fotos-cabana/N?t=mini).
     localPatterns: [
